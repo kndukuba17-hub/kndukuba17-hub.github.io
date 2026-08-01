@@ -93,9 +93,13 @@
   .work{padding-bottom:60px}
   .workgrid{display:grid;grid-template-columns:1fr 1.05fr;gap:clamp(24px,5vw,70px);margin-top:30px;align-items:start}
   .wstage{position:sticky;top:88px;height:min(72vh,560px);border:1px solid var(--line);border-radius:14px;overflow:hidden;background:var(--bg2)}
-  .viz{position:absolute;inset:0;opacity:0;transition:opacity .5s ease;display:grid;place-items:center;padding:26px}
+  .viz{position:absolute;inset:0;opacity:0;transition:opacity .5s ease;display:flex;flex-direction:column;padding:20px 22px;gap:10px}
   .viz.on{opacity:1}
-  .viz .cap{position:absolute;left:18px;bottom:16px;font-family:"SF Mono",Menlo,monospace;font-size:.66rem;letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}
+  .vizhead{font-weight:700;font-size:.98rem;letter-spacing:-.01em;color:var(--ink);line-height:1.22}
+  .vizbody{flex:1;display:grid;place-items:center;min-height:0;width:100%}
+  .axl{display:flex;justify-content:space-between;gap:10px;font-family:"SF Mono",Menlo,monospace;font-size:.56rem;letter-spacing:.08em;text-transform:uppercase;color:var(--faint)}
+  .axl span:last-child{text-align:right}
+  .viznote{font-size:.76rem;line-height:1.45;color:var(--muted)}
   .panels{display:flex;flex-direction:column;gap:0}
   .panel{min-height:64vh;display:flex;flex-direction:column;justify-content:center;padding:20px 0;border-bottom:1px solid var(--line2)}
   .panel .kick{font-family:"SF Mono",Menlo,monospace;font-size:.68rem;letter-spacing:.14em;text-transform:uppercase;color:var(--pink)}
@@ -107,12 +111,20 @@
   .stat .l{font-family:"SF Mono",Menlo,monospace;font-size:.6rem;letter-spacing:.12em;text-transform:uppercase;color:var(--faint);margin-top:2px}
   .panel .go{margin-top:22px;display:inline-flex;align-items:center;gap:.5em;font-family:"SF Mono",Menlo,monospace;font-size:.72rem;letter-spacing:.1em;text-transform:uppercase;color:var(--ink);border-bottom:1px solid var(--pink);padding-bottom:3px;width:max-content;transition:gap .25s}
   .panel .go:hover{gap:1em}
+  .prov{display:flex;align-items:center;gap:8px;margin-top:18px;font-family:"SF Mono",Menlo,monospace;font-size:.64rem;letter-spacing:.08em;text-transform:uppercase;color:var(--faint)}
+  .prov .dot{width:6px;height:6px;border-radius:50%;background:var(--pink);flex:none}
+  .pstack{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}
+  .pstack span{font-family:"SF Mono",Menlo,monospace;font-size:.6rem;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);border:1px solid var(--line);border-radius:4px;padding:5px 9px;transition:border-color .25s,color .25s}
+  .panel:hover .pstack span{border-color:rgba(255,46,136,.35);color:var(--ink)}
+  .mviz{display:none;flex-direction:column;gap:9px;margin:20px 0 2px;padding:16px 16px 14px;border:1px solid var(--line);border-radius:12px;background:var(--bg2);min-height:290px}
+  .mviz .vizbody{min-height:150px}
+  .worklogos{margin-top:26px;margin-bottom:2px}
   @media (max-width:820px){
-    .workgrid{grid-template-columns:1fr;gap:14px}
-    .wstage{order:-1;position:sticky;top:58px;height:30vh;min-height:190px;z-index:6}
-    .panels{order:1}
-    .panel{min-height:auto;padding:22px 0;scroll-margin-top:40vh}
+    .workgrid{display:block}
+    .wstage{display:none}
+    .panel{min-height:auto;padding:26px 0;border-bottom:1px solid var(--line2)}
     .panel .stats{gap:20px}
+    .mviz{display:flex}
   }
 
   /* viz primitives */
@@ -254,6 +266,8 @@
   <div class="wrap">
     <div class="sechead reveal"><span class="ey">01 / Selected Work</span></div>
     <div class="sechead reveal"><h2 class="disp">FEATURED <span class="o">WORK</span></h2></div>
+    <p class="reveal" style="color:var(--muted);max-width:56ch;margin:18px 0 0">Six end-to-end projects built on <b style="color:var(--ink)">real public datasets</b> — each with a plain-English read of what the model does and why it matters to a business.</p>
+    <div class="tkrow worklogos reveal"><span class="tk" id="wtk"></span></div>
     <div class="workgrid">
       <div class="panels" id="panels">
         <!-- panels injected -->
@@ -365,38 +379,73 @@ var PROJ=[
  {kick:"Predictive Analytics · 2026",name:"Customer Lifetime Value",
   desc:"Predicting 6-month customer spend from RFM behaviour on 1.07M real transactions — a ready-to-use targeting list.",
   stats:[["~63%","of future revenue","pk"],["£600","MAE"],["1.07M","transactions"]],
-  href:"https://github.com/kndukuba17-hub/predictive-clv-engine",viz:"bars"},
+  data:"UCI Online Retail II · 1.07M rows",tools:["Python","XGBoost","SHAP","pandas"],
+  href:"https://github.com/kndukuba17-hub/predictive-clv-engine",viz:"bars",
+  vtitle:"Future revenue captured, by predicted-value group",
+  vnote:"Customers are ranked left → right by predicted spend. The top 10% (pink) hold ~63% of next-period revenue — so marketing spends on them first.",
+  ax:["low → high predicted value","share of revenue"]},
  {kick:"Classification · Live app · 2026",name:"Customer Churn + Dashboard",
   desc:"Predicting who cancels and why on 7,043 real customers, with a live interactive retention dashboard.",
   stats:[["0.84","ROC-AUC","pk"],["0.78","recall"],["~50%","churners reached"]],
-  href:"https://kndukuba17-hub.github.io/Customer-Churn-Dashboard/",viz:"roc"},
+  data:"Telco Customer Churn · 7,043 customers",tools:["Python","scikit-learn","XGBoost","SHAP"],
+  href:"https://kndukuba17-hub.github.io/Customer-Churn-Dashboard/",viz:"roc",
+  vtitle:"How well the model separates churners from stayers",
+  vnote:"The more the pink curve bows toward the top-left corner, the better. The area under it (AUC) is 0.84 — a strong, dependable classifier.",
+  ax:["more false alarms →","← more churners caught"]},
  {kick:"Psychology × Data Science · 2026",name:"Big Five Personality",
   desc:"Validating the five-factor structure and segmenting personality types from 603k real survey responses.",
   stats:[["603K","responses","pk"],["5","factors confirmed"],["4","behavioural segments"]],
-  href:"https://github.com/kndukuba17-hub/Big-Five-Personality-Analysis",viz:"clusters"},
+  data:"Open-Source Psychometrics · 603K responses",tools:["Python","PCA","K-Means","pandas"],
+  href:"https://github.com/kndukuba17-hub/Big-Five-Personality-Analysis",viz:"clusters",
+  vtitle:"Four behavioural segments found in the responses",
+  vnote:"Each dot is one person, placed by how they answered; colour is the segment the model grouped them into — clear clusters, with honest overlap at the edges.",
+  ax:["",""]},
  {kick:"Generative AI · 2026",name:"Enterprise RAG Assistant",
   desc:"The retrieval layer that grounds an LLM — chunking, embeddings and FAISS semantic search over documents.",
   stats:[["FAISS","vector search","pk"],["MiniLM","embeddings"],["LangChain","pipeline"]],
-  href:"https://github.com/kndukuba17-hub/Enterprise-RAG-Knowledge-Assistant",viz:"network"},
+  data:"Retrieval-Augmented Generation pipeline",tools:["Python","LangChain","FAISS","MiniLM"],
+  href:"https://github.com/kndukuba17-hub/Enterprise-RAG-Knowledge-Assistant",viz:"network",
+  vtitle:"How the assistant finds the right passage",
+  vnote:"Every document becomes a point in meaning-space. A question lights up the nearest points (pink), and those exact passages are handed to the LLM as cited sources.",
+  ax:["",""]},
  {kick:"NLP · 2026",name:"Aviation Sentiment",
   desc:"Classifying 14,640 real airline tweets by sentiment — Bag-of-Words beat Word2Vec on short, noisy text.",
   stats:[["80.4%","accuracy","pk"],["0.74","macro-F1"],["14,640","tweets"]],
-  href:"https://github.com/kndukuba17-hub/Aviation-Sentiment-Classifier",viz:"tokens"},
+  data:"Twitter US Airline Sentiment · 14,640 tweets",tools:["Python","scikit-learn","NLTK","gensim"],
+  href:"https://github.com/kndukuba17-hub/Aviation-Sentiment-Classifier",viz:"tokens",
+  vtitle:"Words that swing a tweet positive or negative",
+  vnote:"Taller bars are the words the model leans on most when judging a tweet. Being able to read them keeps the model transparent — 80% accurate across 14,640 tweets.",
+  ax:["individual words","weight in decision"]},
  {kick:"Recommender · 2026",name:"E-Commerce Recommender",
   desc:"Item-based collaborative filtering on 805k transactions, evaluated honestly against a popularity baseline.",
   stats:[["~1.5×","lift on precision@10","pk"],["35%","hit-rate"],["805K","transactions"]],
-  href:"https://github.com/kndukuba17-hub/B2C-Retail-Analytics-E-Commerce-Recommendation-Engine",viz:"heat"}
+  data:"UCI Online Retail II · 805K transactions",tools:["Python","scikit-learn","pandas","NumPy"],
+  href:"https://github.com/kndukuba17-hub/B2C-Retail-Analytics-E-Commerce-Recommendation-Engine",viz:"heat",
+  vtitle:"Predicted affinity between shoppers and products",
+  vnote:"Each cell is one shopper–product pair; brighter means stronger predicted interest. We recommend the brightest items a shopper hasn't bought yet.",
+  ax:["products →","shoppers ↓"]}
 ];
 
 /* build panels + vizzes */
 var panels=document.getElementById("panels"), stage=document.getElementById("stage");
+function vizFull(p){
+  var ax=p.ax||["",""];
+  var axhtml=(ax[0]||ax[1])?'<div class="axl"><span>'+ax[0]+'</span><span>'+ax[1]+'</span></div>':'';
+  return '<div class="vizhead">'+p.vtitle+'</div><div class="vizbody">'+vizHTML(p.viz)+'</div>'+axhtml+'<div class="viznote">'+p.vnote+'</div>';
+}
 PROJ.forEach(function(p,i){
   var pan=document.createElement("div"); pan.className="panel reveal"; pan.setAttribute("data-i",i);
   var st=p.stats.map(function(s){return '<div class="stat"><div class="v">'+(s[2]?'<span class="pk">'+s[0]+'</span>':s[0])+'</div><div class="l">'+s[1]+'</div></div>';}).join("");
-  pan.innerHTML='<div class="kick">'+p.kick+'</div><h3 class="disp">'+p.name+'</h3><p>'+p.desc+'</p><div class="stats">'+st+'</div><a class="go" data-mag href="'+p.href+'" target="_blank" rel="noopener">View project ↗</a>';
+  var stk=p.tools.map(function(t){return '<span>'+t+'</span>';}).join("");
+  pan.innerHTML='<div class="kick">'+p.kick+'</div><h3 class="disp">'+p.name+'</h3><p>'+p.desc+'</p>'
+    +'<div class="stats">'+st+'</div>'
+    +'<div class="mviz" data-i="'+i+'">'+vizFull(p)+'</div>'
+    +'<div class="prov"><span class="dot"></span>Real data · '+p.data+'</div>'
+    +'<div class="pstack">'+stk+'</div>'
+    +'<a class="go" data-mag href="'+p.href+'" target="_blank" rel="noopener">View project ↗</a>';
   panels.appendChild(pan);
   var v=document.createElement("div"); v.className="viz"+(i===0?" on":""); v.setAttribute("data-i",i);
-  v.innerHTML=vizHTML(p.viz)+'<div class="cap">'+p.name+'</div>';
+  v.innerHTML=vizFull(p);
   stage.appendChild(v);
 });
 
@@ -422,6 +471,13 @@ function animateViz(v){
 animateViz(vizzes[0]);
 var actIO=new IntersectionObserver(function(es){es.forEach(function(e){if(e.isIntersecting){var i=+e.target.getAttribute("data-i");vizzes.forEach(function(v,j){v.classList.toggle("on",j===i);});animateViz(vizzes[i]);}});},{threshold:.55});
 document.querySelectorAll(".panel").forEach(function(p){actIO.observe(p);});
+
+/* mobile: each project carries its own inline graph — animate it when it scrolls in */
+var mIO=new IntersectionObserver(function(es){es.forEach(function(e){if(e.isIntersecting){animateViz(e.target);mIO.unobserve(e.target);}});},{threshold:.28});
+document.querySelectorAll(".mviz").forEach(function(m){mIO.observe(m);});
+
+/* moving tech-logo band under the Featured Work heading */
+(function(){var el=document.getElementById("wtk");if(!el)return;var ws=["Python","pandas","NumPy","scikit-learn","XGBoost","SHAP","LangChain","FAISS","SQL","PyTorch","Matplotlib","Docker"];var s="";for(var k=0;k<2;k++){ws.forEach(function(t){s+="<span class='chip'>"+t+"</span>";});}el.innerHTML=s;})();
 
 /* reveals */
 var io=new IntersectionObserver(function(es){es.forEach(function(e){if(e.isIntersecting){e.target.classList.add("in");io.unobserve(e.target);}});},{threshold:.12,rootMargin:"0px 0px -8% 0px"});
@@ -470,8 +526,8 @@ function sampleFace(){
     var col=i%cols;
     if(col<startC){flum[i]=0;continue;}
     var lum=(0.299*d[i*4]+0.587*d[i*4+1]+0.114*d[i*4+2])/255;
-    lum=(lum-0.16)/0.72; lum=lum<0?0:lum>1?1:lum;
-    flum[i]=Math.pow(lum,1.15)*0.66;
+    lum=(lum-0.10)/0.74; lum=lum<0?0:lum>1?1:lum;
+    flum[i]=Math.pow(lum,0.92)*0.86;
   }
 }
 function size(){DPR=Math.min(devicePixelRatio||1,2);W=cv.clientWidth;H=cv.clientHeight;cv.width=W*DPR;cv.height=H*DPR;x.setTransform(DPR,0,0,DPR,0,0);
