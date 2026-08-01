@@ -32,7 +32,7 @@
   .ey{font-family:"SF Mono",Menlo,monospace;font-size:.68rem;letter-spacing:.26em;text-transform:uppercase;color:var(--pink)}
 
   /* cursor */
-  .cur{position:fixed;top:0;left:0;width:12px;height:12px;border-radius:50%;background:var(--pink);z-index:120;pointer-events:none;transform:translate(-50%,-50%);mix-blend-mode:screen;transition:width .2s,height .2s,background .2s}
+  .cur{position:fixed;top:0;left:0;width:12px;height:12px;border-radius:50%;background:var(--pink);z-index:300;pointer-events:none;transform:translate(-50%,-50%);mix-blend-mode:screen;transition:width .2s,height .2s,background .2s}
   .cur.big{width:46px;height:46px;background:rgba(255,46,136,.25);border:1px solid var(--pink)}
   @media (pointer:coarse){.cur{display:none}}
 
@@ -229,6 +229,50 @@
     .flow .t,.tk,.scrollmouse .m::after,.scrollmouse .ch{animation:none}
     .reveal{opacity:1;transform:none;transition:none}
   }
+
+  /* ===== CV SURVEY MODAL ===== */
+  button.cvbtn{background:transparent;cursor:none}
+  .cvmodal{position:fixed;inset:0;z-index:200;display:none;align-items:center;justify-content:center;padding:clamp(14px,4vw,40px);background:rgba(6,6,10,.9);backdrop-filter:blur(9px)}
+  .cvmodal.open{display:flex}
+  .cvbg{position:absolute;inset:0;overflow:hidden;z-index:0}
+  #cvbin{position:absolute;inset:0;width:100%;height:100%;opacity:.55}
+  .cvbg::after{content:"";position:absolute;inset:0;background:radial-gradient(60% 50% at 50% 40%,rgba(255,46,136,.12),transparent 70%)}
+  .cvclose{position:absolute;top:16px;right:18px;z-index:5;width:42px;height:42px;border-radius:50%;border:1px solid var(--line);background:rgba(20,20,28,.75);color:var(--ink);font-size:1rem;cursor:none;transition:border-color .25s,color .25s,transform .25s}
+  .cvclose:hover{border-color:var(--pink);color:var(--pink);transform:rotate(90deg)}
+  .cvcard{position:relative;z-index:2;width:100%;max-width:640px;max-height:92vh;overflow-y:auto;background:linear-gradient(180deg,rgba(17,17,26,.97),rgba(10,10,16,.98));border:1px solid var(--line);border-radius:18px;padding:clamp(24px,4vw,42px);box-shadow:0 40px 120px -30px rgba(255,46,136,.4)}
+  .cvcard::-webkit-scrollbar{width:8px}.cvcard::-webkit-scrollbar-thumb{background:#2a2a35;border-radius:4px}
+  .cvh{font-size:clamp(1.9rem,6vw,3rem);margin:.25em 0 .35em}
+  .cvlede{color:var(--muted);font-size:1rem;line-height:1.5;margin:0 0 24px;max-width:48ch}
+  .cvq{margin:0 0 18px}
+  .cvlbl{display:block;font-family:"SF Mono",Menlo,monospace;font-size:.64rem;letter-spacing:.14em;text-transform:uppercase;color:var(--faint);margin-bottom:10px}
+  .cvlbl .opt{color:#4a4a54;text-transform:none;letter-spacing:.03em}
+  .cvchips{display:flex;flex-wrap:wrap;gap:9px}
+  .cvchip{font-family:"SF Mono",Menlo,monospace;font-size:.74rem;letter-spacing:.02em;color:var(--muted);border:1px solid var(--line);background:transparent;border-radius:9px;padding:10px 14px;cursor:none;transition:border-color .2s,color .2s,background .2s,transform .15s}
+  .cvchip:hover{border-color:rgba(255,46,136,.5);color:var(--ink);transform:translateY(-1px)}
+  .cvchip.sel{border-color:var(--pink);color:#160009;background:var(--pink);font-weight:700}
+  .cvgrid2{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+  .cvmodal input{width:100%;background:var(--bg2);border:1px solid var(--line);border-radius:8px;padding:12px 13px;color:var(--ink);font-family:inherit;font-size:.92rem;transition:border-color .2s}
+  .cvmodal input:focus{outline:none;border-color:var(--pink)}
+  .cvgo{display:inline-flex;align-items:center;justify-content:center;gap:.5em;width:100%;margin-top:8px;background:var(--pink);color:#160009;font-family:"SF Mono",Menlo,monospace;font-weight:700;letter-spacing:.08em;text-transform:uppercase;border:none;border-radius:10px;padding:15px;cursor:none;font-size:.82rem;transition:transform .2s,box-shadow .3s,opacity .2s}
+  .cvgo:hover{transform:translateY(-2px);box-shadow:0 14px 40px -10px rgba(255,46,136,.55)}
+  .cvgo:disabled{opacity:.38;transform:none;box-shadow:none}
+  .cvfoot{text-align:center;color:var(--faint);font-size:.72rem;margin:14px 0 0}
+  .cvtabs{display:flex;flex-wrap:wrap;gap:8px;margin:2px 0 16px}
+  .cvtab{font-family:"SF Mono",Menlo,monospace;font-size:.68rem;letter-spacing:.02em;color:var(--muted);border:1px solid var(--line);border-radius:8px;padding:9px 12px;cursor:none;background:transparent;transition:border-color .2s,color .2s}
+  .cvtab:hover{color:var(--ink);border-color:rgba(255,46,136,.4)}
+  .cvtab.sel{border-color:var(--pink);color:var(--pink)}
+  .cvtab .rec{color:var(--pink);font-size:.72em;margin-left:.45em}
+  .cvpreviewwrap{border:1px solid var(--line);border-radius:12px;overflow:hidden;background:#2a2a32;height:min(56vh,520px)}
+  .cvpreview{width:100%;height:100%;overflow-y:auto;background:#33333c;-webkit-overflow-scrolling:touch}
+  .cvpreview img{width:100%;display:block}
+  .cvpreview img+img{border-top:1px solid rgba(0,0,0,.45)}
+  .cvpreview::-webkit-scrollbar{width:8px}.cvpreview::-webkit-scrollbar-thumb{background:#4a4a55;border-radius:4px}
+  .cvactions{display:flex;flex-wrap:wrap;gap:10px;margin-top:16px;align-items:stretch}
+  .cvactions .cvgo{width:auto;flex:2;min-width:170px;margin-top:0}
+  .cvbtn2{display:inline-flex;align-items:center;justify-content:center;flex:1;min-width:130px;font-family:"SF Mono",Menlo,monospace;font-size:.72rem;letter-spacing:.05em;text-transform:uppercase;color:var(--ink);border:1px solid var(--line);border-radius:10px;padding:14px 14px;cursor:none;background:transparent;transition:border-color .25s,color .25s}
+  .cvbtn2:hover{border-color:var(--pink);color:var(--pink)}
+  @media (max-width:560px){.cvgrid2{grid-template-columns:1fr}.cvactions{flex-direction:column}.cvactions .cvgo,.cvactions .cvbtn2{width:100%;flex:none}}
+  @media (pointer:coarse){.cvchip,.cvtab,.cvgo,.cvbtn2,.cvclose,button.cvbtn{cursor:pointer}}
 </style>
 
 <div class="cur" id="cur"></div>
@@ -239,6 +283,7 @@
     <a href="#work"><span class="n">01</span> / Work</a>
     <a href="#about"><span class="n">02</span> / About</a>
     <a href="#contact"><span class="n">03</span> / Contact</a>
+    <a href="#" data-cvopen><span class="n">04</span> / CV</a>
   </div>
   <a class="getbtn" data-mag href="#contact">Get in touch</a>
 </nav>
@@ -285,7 +330,8 @@
       <div>
         <p class="lede reveal">Psychology taught me <span class="pk">why</span> people decide. Data science lets me <span class="pk">predict</span> what they'll do next — and turn it into a decision.</p>
         <div class="cvbtns reveal">
-          <a class="cvbtn solid" data-mag href="https://github.com/kndukuba17-hub" target="_blank" rel="noopener">GitHub ↗</a>
+          <button class="cvbtn solid" data-mag data-cvopen type="button">Download CV ↓</button>
+          <a class="cvbtn" data-mag href="https://github.com/kndukuba17-hub" target="_blank" rel="noopener">GitHub ↗</a>
           <a class="cvbtn" data-mag href="https://www.linkedin.com/in/kayceendukuba" target="_blank" rel="noopener">LinkedIn ↗</a>
           <a class="cvbtn" data-mag href="mailto:kndukuba17@gmail.com">Email me ↗</a>
         </div>
@@ -342,6 +388,7 @@
         <a data-mag href="https://github.com/kndukuba17-hub" target="_blank" rel="noopener"><span>⟨/⟩&nbsp; github.com/kndukuba17-hub</span><span class="ar">↗</span></a>
         <a data-mag href="https://www.linkedin.com/in/kayceendukuba" target="_blank" rel="noopener"><span>in&nbsp; linkedin.com/in/kayceendukuba</span><span class="ar">↗</span></a>
         <a data-mag href="https://kndukuba17-hub.github.io/Customer-Churn-Dashboard/" target="_blank" rel="noopener"><span>◫ &nbsp;Live churn dashboard</span><span class="ar">↗</span></a>
+        <a data-mag data-cvopen href="#"><span>↓ &nbsp;Download my CV</span><span class="ar">↗</span></a>
       </div>
       <form id="msg" class="reveal">
         <label>Your name</label><input id="mn" type="text" placeholder="Jane Recruiter" required>
@@ -353,6 +400,48 @@
     <div class="foot"><span>© 2026 Kaycee Ndukuba — London, UK · Open to global relocation</span><span>Designed &amp; built from scratch · psychology × data × AI</span></div>
   </div>
 </section>
+
+<!-- CV SURVEY MODAL -->
+<div class="cvmodal" id="cvmodal" aria-hidden="true" role="dialog" aria-modal="true" aria-label="Download CV">
+  <div class="cvbg"><canvas id="cvbin" aria-hidden="true"></canvas></div>
+  <button class="cvclose" id="cvclose" type="button" aria-label="Close">✕</button>
+  <div class="cvcard" id="cvcard">
+    <!-- step 1: survey -->
+    <div class="cvstep" id="cvstep1">
+      <span class="ey">Before you download</span>
+      <h3 class="disp cvh">ONE QUICK<br>THING<span class="pk">.</span></h3>
+      <p class="cvlede">Tell me who's looking and I'll pull up the CV tailored to you — a small demo of the product thinking I'd bring to your team.</p>
+      <div class="cvq">
+        <label class="cvlbl">Who are you?</label>
+        <div class="cvchips" id="cvpersona"></div>
+      </div>
+      <div class="cvq">
+        <label class="cvlbl">What brings you here? <span class="opt">(optional)</span></label>
+        <div class="cvchips" id="cvreason"></div>
+      </div>
+      <div class="cvq cvgrid2">
+        <div><label class="cvlbl">Name <span class="opt">(optional)</span></label><input id="cvname" type="text" autocomplete="name" placeholder="Jane Recruiter"></div>
+        <div><label class="cvlbl">Company <span class="opt">(optional)</span></label><input id="cvcompany" type="text" autocomplete="organization" placeholder="Acme AI"></div>
+      </div>
+      <div class="cvq"><label class="cvlbl">Email <span class="opt">(optional — if you'd like a reply)</span></label><input id="cvemail" type="email" autocomplete="email" placeholder="jane@acme.ai"></div>
+      <button class="cvgo" id="cvsubmit" type="button" disabled>Show me the CV →</button>
+      <p class="cvfoot">No account, no spam — this just tailors what you see.</p>
+    </div>
+    <!-- step 2: routed preview -->
+    <div class="cvstep" id="cvstep2" hidden>
+      <span class="ey" id="cvrecey">Recommended for you</span>
+      <h3 class="disp cvh" id="cvrectitle">DATA SCIENTIST<span class="pk">.</span></h3>
+      <p class="cvlede" id="cvrecsub"></p>
+      <div class="cvtabs" id="cvtabs"></div>
+      <div class="cvpreviewwrap"><div class="cvpreview" id="cvpreview" tabindex="0" aria-label="CV preview"></div></div>
+      <div class="cvactions">
+        <a class="cvgo" id="cvdownload" download href="#">Download PDF ↓</a>
+        <a class="cvbtn2" id="cvopentab" target="_blank" rel="noopener" href="#">Open ↗</a>
+        <button class="cvbtn2" id="cvback" type="button">← Back</button>
+      </div>
+    </div>
+  </div>
+</div>
 
 <div class="hud">
   <span class="hide">SCRL <b id="hscrl">0.00</b></span>
@@ -567,6 +656,110 @@ size();
 if(reduce){ for(var k=0;k<3;k++){t+=0.5;} frame(); if(rafH){cancelAnimationFrame(rafH);rafH=null;} }
 else{ rafH=requestAnimationFrame(frame); }
 new IntersectionObserver(function(es){es.forEach(function(e){if(e.isIntersecting){if(!rafH&&!reduce)rafH=requestAnimationFrame(frame);}else{if(rafH){cancelAnimationFrame(rafH);rafH=null;}}});},{threshold:0}).observe(hero);
+})();
+</script>
+
+<script>
+/* ===== CV SURVEY MODAL ===== */
+(function(){
+"use strict";
+/* ── CONFIG ─────────────────────────────────────────────────────────
+   Paste your Formspree form ID between the quotes to turn on tracking,
+   e.g. FORM_ID = "xdkoabcd";  (get it free at https://formspree.io)
+   Until then downloads work fine — submissions are just not recorded.  */
+var FORM_ID = "";
+/* ──────────────────────────────────────────────────────────────────── */
+
+var reduceM=matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+var CVS={
+ master:{title:"MASTER CV",sub:"Every project, skill and role in one — the complete picture.",file:"assets/cv/kaycee-ndukuba-cv-master.pdf",tab:"Master"},
+ mle:{title:"AI / ML ENGINEER",sub:"Models in production, MLOps, LLMs & RAG — the build-and-ship story.",file:"assets/cv/kaycee-ndukuba-cv-ai-ml-engineer.pdf",tab:"AI / ML Engineer"},
+ ds:{title:"DATA SCIENTIST",sub:"Machine learning, statistics and behavioural modelling tied to decisions.",file:"assets/cv/kaycee-ndukuba-cv-data-scientist.pdf",tab:"Data Scientist"},
+ da:{title:"DATA ANALYST",sub:"SQL, dashboards and stakeholder reporting that drive action.",file:"assets/cv/kaycee-ndukuba-cv-data-analyst.pdf",tab:"Data Analyst"}
+};
+var PERSONAS=[
+ {id:"recruiter",label:"Recruiter / Talent",route:["master","ds","mle","da"]},
+ {id:"eng",label:"Engineering / ML lead",route:["mle","ds","master","da"]},
+ {id:"dsci",label:"Data Science lead",route:["ds","master","mle","da"]},
+ {id:"analytics",label:"Analytics / BI lead",route:["da","master","ds","mle"]},
+ {id:"founder",label:"Founder / Hiring manager",route:["master","ds","mle","da"]},
+ {id:"curious",label:"Just curious",route:["master","ds","mle","da"]}
+];
+var REASONS=["Hiring for a role","Building a shortlist","Reviewing a candidate","Networking","Just exploring"];
+
+var modal=document.getElementById("cvmodal");
+var state={persona:null,reason:null};
+var recKey=null,curKey=null;
+
+/* build chips */
+var pc=document.getElementById("cvpersona");
+PERSONAS.forEach(function(p){var b=document.createElement("button");b.type="button";b.className="cvchip";b.textContent=p.label;
+  b.addEventListener("click",function(){state.persona=p.id;[].forEach.call(pc.children,function(c){c.classList.remove("sel");});b.classList.add("sel");document.getElementById("cvsubmit").disabled=false;});
+  pc.appendChild(b);});
+var rc=document.getElementById("cvreason");
+REASONS.forEach(function(r){var b=document.createElement("button");b.type="button";b.className="cvchip";b.textContent=r;
+  b.addEventListener("click",function(){var on=b.classList.contains("sel");[].forEach.call(rc.children,function(c){c.classList.remove("sel");});if(!on){b.classList.add("sel");state.reason=r;}else{state.reason=null;}});
+  rc.appendChild(b);});
+
+/* open / close */
+function openModal(e){if(e)e.preventDefault();modal.classList.add("open");modal.setAttribute("aria-hidden","false");document.body.style.overflow="hidden";startBin();}
+function closeModal(){modal.classList.remove("open");modal.setAttribute("aria-hidden","true");document.body.style.overflow="";stopBin();}
+[].forEach.call(document.querySelectorAll("[data-cvopen]"),function(el){el.addEventListener("click",openModal);});
+document.getElementById("cvclose").addEventListener("click",closeModal);
+modal.addEventListener("click",function(e){if(e.target===modal)closeModal();});
+addEventListener("keydown",function(e){if(e.key==="Escape"&&modal.classList.contains("open"))closeModal();});
+
+/* routing + preview */
+function personaById(id){for(var i=0;i<PERSONAS.length;i++)if(PERSONAS[i].id===id)return PERSONAS[i];return PERSONAS[0];}
+function showCV(key){curKey=key;var c=CVS[key];
+  document.getElementById("cvrectitle").innerHTML=c.title+'<span class="pk">.</span>';
+  document.getElementById("cvrecey").textContent=(key===recKey)?"Recommended for you":"Also available";
+  document.getElementById("cvrecsub").textContent=c.sub;
+  var base=c.file.replace("assets/cv/","assets/cv/thumbs/").replace(/\.pdf$/,"");
+  var pv=document.getElementById("cvpreview");
+  pv.innerHTML='<img alt="'+c.tab+' CV page 1" src="'+base+'-1.png"><img alt="'+c.tab+' CV page 2" src="'+base+'-2.png">';
+  pv.scrollTop=0;
+  var dl=document.getElementById("cvdownload");dl.href=c.file;dl.setAttribute("download","Kaycee Ndukuba - "+c.tab+" CV.pdf");
+  document.getElementById("cvopentab").href=c.file;
+  [].forEach.call(document.querySelectorAll(".cvtab"),function(t){t.classList.toggle("sel",t.getAttribute("data-k")===key);});}
+function buildTabs(route){var tabs=document.getElementById("cvtabs");tabs.innerHTML="";
+  route.forEach(function(k,i){var b=document.createElement("button");b.type="button";b.className="cvtab"+(i===0?" sel":"");b.setAttribute("data-k",k);
+    b.innerHTML=CVS[k].tab+(i===0?'<span class="rec">◆</span>':"");
+    b.addEventListener("click",function(){showCV(k);track("switch",k);});tabs.appendChild(b);});}
+function goPreview(){var p=personaById(state.persona);recKey=p.route[0];buildTabs(p.route);
+  document.getElementById("cvstep1").hidden=true;document.getElementById("cvstep2").hidden=false;
+  document.getElementById("cvcard").scrollTop=0;showCV(recKey);}
+
+/* tracking (Formspree JSON POST; no-op until FORM_ID is set) */
+function val(id){var e=document.getElementById(id);return e?e.value.trim():"";}
+function track(evt,cv){
+  var data={event:evt,persona:state.persona,reason:state.reason||"",name:val("cvname"),company:val("cvcompany"),
+    email:val("cvemail"),cv:cv||curKey||"",page:location.href,referrer:document.referrer||"direct",
+    ts:new Date().toISOString(),ua:navigator.userAgent};
+  try{localStorage.setItem("cvlead",JSON.stringify(data));}catch(e){}
+  if(!FORM_ID)return;
+  try{fetch("https://formspree.io/f/"+FORM_ID,{method:"POST",headers:{Accept:"application/json","Content-Type":"application/json"},body:JSON.stringify(data)});}catch(e){}
+}
+
+document.getElementById("cvsubmit").addEventListener("click",function(){if(!state.persona)return;track("view");goPreview();});
+document.getElementById("cvback").addEventListener("click",function(){document.getElementById("cvstep2").hidden=true;document.getElementById("cvstep1").hidden=false;document.getElementById("cvcard").scrollTop=0;});
+document.getElementById("cvdownload").addEventListener("click",function(){track("download");});
+
+/* modal binary backdrop (light, pauses when closed) */
+var bcv=document.getElementById("cvbin"),bx=bcv.getContext("2d"),bw,bh,bDPR,bcols,brows,bcell=20,bgrid=[],bt=0,braf=null;
+function bsize(){bDPR=Math.min(devicePixelRatio||1,2);bw=bcv.clientWidth;bh=bcv.clientHeight;if(!bw||!bh)return;bcv.width=bw*bDPR;bcv.height=bh*bDPR;bx.setTransform(bDPR,0,0,bDPR,0,0);
+  bcols=Math.ceil(bw/bcell)+1;brows=Math.ceil(bh/bcell)+1;bgrid=[];for(var i=0;i<bcols*brows;i++)bgrid.push(Math.random()<.5?"0":"1");}
+function bframe(){bt+=0.02;bx.clearRect(0,0,bw,bh);bx.font="700 12px 'SF Mono',Menlo,monospace";bx.textAlign="center";bx.textBaseline="middle";
+  for(var gy=0;gy<brows;gy++)for(var gx=0;gx<bcols;gx++){var idx=gy*bcols+gx,px=gx*bcell+bcell/2,py=gy*bcell+bcell/2;
+    var w=0.5+0.5*Math.sin((gx*0.4+gy*0.3)-bt),a=0.03+w*0.10;
+    if(Math.random()<0.006)bgrid[idx]=Math.random()<.5?"0":"1";
+    bx.fillStyle=(w>0.86)?"rgba(255,46,136,"+(a+0.12).toFixed(3)+")":"rgba(150,150,170,"+a.toFixed(3)+")";
+    bx.fillText(bgrid[idx],px,py);}
+  braf=requestAnimationFrame(bframe);}
+function startBin(){bsize();if(reduceM){bframe();if(braf){cancelAnimationFrame(braf);braf=null;}return;}if(!braf)braf=requestAnimationFrame(bframe);}
+function stopBin(){if(braf){cancelAnimationFrame(braf);braf=null;}}
+addEventListener("resize",function(){if(modal.classList.contains("open"))bsize();});
 })();
 </script>
 
