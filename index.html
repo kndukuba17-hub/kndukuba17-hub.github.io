@@ -691,18 +691,17 @@ var FORM_ID = "xdaqqggb";
 var reduceM=matchMedia("(prefers-reduced-motion: reduce)").matches;
 
 var CVS={
- master:{title:"MASTER CV",sub:"Every project, skill and role in one — the complete picture.",file:"assets/cv/kaycee-ndukuba-cv-master.pdf",tab:"Master"},
  mle:{title:"AI / ML ENGINEER",sub:"Models in production, MLOps, LLMs & RAG — the build-and-ship story.",file:"assets/cv/kaycee-ndukuba-cv-ai-ml-engineer.pdf",tab:"AI / ML Engineer"},
  ds:{title:"DATA SCIENTIST",sub:"Machine learning, statistics and behavioural modelling tied to decisions.",file:"assets/cv/kaycee-ndukuba-cv-data-scientist.pdf",tab:"Data Scientist"},
  da:{title:"DATA ANALYST",sub:"SQL, dashboards and stakeholder reporting that drive action.",file:"assets/cv/kaycee-ndukuba-cv-data-analyst.pdf",tab:"Data Analyst"}
 };
 var PERSONAS=[
- {id:"recruiter",label:"Recruiter / Talent",route:["master","ds","mle","da"]},
- {id:"eng",label:"Engineering / ML lead",route:["mle","ds","master","da"]},
- {id:"dsci",label:"Data Science lead",route:["ds","master","mle","da"]},
- {id:"analytics",label:"Analytics / BI lead",route:["da","master","ds","mle"]},
- {id:"founder",label:"Founder / Hiring manager",route:["master","ds","mle","da"]},
- {id:"curious",label:"Just curious",route:["master","ds","mle","da"]}
+ {id:"recruiter",label:"Recruiter / Talent",route:["ds","mle","da"]},
+ {id:"eng",label:"Engineering / ML lead",route:["mle","ds","da"]},
+ {id:"dsci",label:"Data Science lead",route:["ds","mle","da"]},
+ {id:"analytics",label:"Analytics / BI lead",route:["da","ds","mle"]},
+ {id:"founder",label:"Founder / Hiring manager",route:["ds","mle","da"]},
+ {id:"curious",label:"Just curious",route:["ds","mle","da"]}
 ];
 var REASONS=["Hiring for a role","Building a shortlist","Reviewing a candidate","Networking","Just exploring"];
 
