@@ -1,0 +1,3 @@
+User-agent: *
+Allow: /
+Sitemap: https://kndukuba17-hub.github.io/sitemap.xml
