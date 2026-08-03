@@ -821,5 +821,19 @@ var rt=null;addEventListener("resize",function(){if(!ready)return;clearTimeout(r
 })();
 </script>
 
+<script>
+/* ===== PRIVACY-FRIENDLY ANALYTICS (GoatCounter) ===== */
+(function(){
+  /* Sign up free at https://www.goatcounter.com — choose a code (e.g. "kayceendukuba"),
+     then set GC_CODE to it. No cookies, no banner. Off until a code is set. */
+  var GC_CODE = "";
+  if(!GC_CODE) return;
+  var s=document.createElement("script");
+  s.async=true; s.src="//gc.zgo.at/count.js";
+  s.setAttribute("data-goatcounter","https://"+GC_CODE+".goatcounter.com/count");
+  document.head.appendChild(s);
+})();
+</script>
+
 </body>
 </html>
