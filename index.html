@@ -62,11 +62,6 @@
   /* ===== HERO ===== */
   .hero{position:relative;height:100svh;min-height:640px;overflow:hidden;display:flex;align-items:center}
   #bin{position:absolute;inset:0;width:100%;height:100%;z-index:1}
-  .hface{position:absolute;top:50%;right:1.5%;transform:translateY(-50%);height:94%;width:auto;max-width:56%;object-fit:contain;z-index:2;pointer-events:none;
-    -webkit-mask-image:linear-gradient(90deg,transparent,#000 7%);mask-image:linear-gradient(90deg,transparent,#000 7%);
-    filter:brightness(1.2) contrast(1.1) drop-shadow(0 0 80px rgba(255,46,136,.22))}
-  @media (max-width:820px){.hface{max-width:none;width:120%;height:auto;top:50%;right:-6%;transform:translateY(-42%);opacity:.34;
-    -webkit-mask-image:radial-gradient(circle at 62% 46%,#000 42%,transparent 74%);mask-image:radial-gradient(circle at 62% 46%,#000 42%,transparent 74%)}}
   .hero .wrap{position:relative;z-index:3;width:100%;max-width:none}
   .hero .role{margin-bottom:14px}
   .hero h1{font-size:clamp(3.4rem,13vw,10rem);margin:0}
@@ -315,8 +310,7 @@
 <!-- HERO -->
 <header class="hero" id="top">
   <canvas id="bin" aria-hidden="true"></canvas>
-  <img class="hface" alt="Kaycee Ndukuba at graduation, rendered in binary" src="assets/kaycee-binary.png">
-  <img id="face" alt="" aria-hidden="true" style="display:none" src="assets/kaycee-hero.jpg">
+  <img id="face" alt="Kaycee Ndukuba at graduation, rendered in binary" style="display:none" src="assets/kaycee-map.png">
   <div class="wrap">
     <div class="role reveal in"><span class="ey">Applied Data Scientist · Behavioural AI</span></div>
     <h1 class="disp hname" aria-label="Kaycee Ndukuba"><span class="ln"><span class="in">KAYCEE</span></span><span class="ln"><span class="in b">NDUKUBA.</span></span></h1>
@@ -629,59 +623,96 @@ document.getElementById("msg").addEventListener("submit",function(e){
 });
 
 /* ---------- BINARY HERO (reveals portrait) ---------- */
-var cv=document.getElementById("bin"),x=cv.getContext("2d"),W,H,DPR,cols,rows,cell=18,grid=[],mx=-9999,my=-9999;
-var face=document.getElementById("face"),faceOK=false,flum=[];
+/* High-resolution ASCII portrait. The source map decides WHERE characters exist and HOW
+   BRIGHT they are. ~290 columns on desktop, so cap/hair/face/eyes/nose/smile/tie/gown all
+   resolve. A static base layer is rendered once; per frame we only repaint the flickering
+   cells and the cells under the cursor, which keeps 47k characters at 60fps. */
+var cv=document.getElementById("bin"),x=cv.getContext("2d"),W,H,DPR,cols,rows,mx=-9999,my=-9999;
+var cell=coarse?9:4, FONT="700 "+(cell+1)+"px 'SF Mono',ui-monospace,Menlo,monospace";
+var face=document.getElementById("face"),faceOK=false,flum=[],chars=[];
 var oc=document.createElement("canvas"),ox=oc.getContext("2d",{willReadFrequently:true});
-face.addEventListener("load",function(){faceOK=true;sampleFace();});
+var base=document.createElement("canvas"),bxc=base.getContext("2d");
+face.addEventListener("load",function(){faceOK=true;sampleFace();buildBase();});
 if(face.complete&&face.naturalWidth){faceOK=true;}
+
 function sampleFace(){
-  flum=[];return; // face is now a crisp static PNG overlay (.hface); canvas stays ambient
   if(!faceOK||!cols){flum=[];return;}
   oc.width=cols;oc.height=rows;ox.clearRect(0,0,cols,rows);
-  var startC=Math.floor(cols*0.40),rw=cols-startC,rh=rows,iw=face.naturalWidth,ih=face.naturalHeight;
-  var scale=Math.max(rw/iw,rh/ih),dw=iw*scale,dh=ih*scale,dx=startC+(rw-dw)/2,dy=(rh-dh)/2;
+  // CONTAIN (not cover) so the mortarboard is never cropped
+  var startC=Math.floor(cols*0.38),rw=cols-startC,rh=rows,iw=face.naturalWidth,ih=face.naturalHeight;
+  var scale=Math.min(rw/iw,rh/ih)*0.99,dw=iw*scale,dh=ih*scale;
+  var dx=startC+(rw-dw)*0.62,dy=(rh-dh)/2;
   ox.drawImage(face,dx,dy,dw,dh);
   var d;try{d=ox.getImageData(0,0,cols,rows).data;}catch(e){return;}
-  flum=new Array(cols*rows);
-  for(var i=0;i<cols*rows;i++){
-    var col=i%cols;
-    if(col<startC){flum[i]=0;continue;}
-    var lum=(0.299*d[i*4]+0.587*d[i*4+1]+0.114*d[i*4+2])/255;
-    lum=(lum-0.12)/0.64; lum=lum<0?0:lum>1?1:lum;
-    flum[i]=Math.pow(lum,0.78)*0.99;
-  }
+  flum=new Float32Array(cols*rows);
+  for(var i=0;i<cols*rows;i++) flum[i]=d[i*4]/255; // map is greyscale
 }
-function size(){DPR=Math.min(devicePixelRatio||1,2);W=cv.clientWidth;H=cv.clientHeight;cv.width=W*DPR;cv.height=H*DPR;x.setTransform(DPR,0,0,DPR,0,0);
-  cols=Math.ceil(W/cell)+1;rows=Math.ceil(H/cell)+1;grid=[];for(var i=0;i<cols*rows;i++)grid.push({c:Math.random()<.5?"0":"1",b:0});sampleFace();}
+// colour ramp calibrated to measured map values:
+// cap .40  hair .32  eyes .52  gown .58  nose .70  cheek .78  teeth .97
+function fcol(v){
+  var lv=(v-0.26)/0.74,u;
+  if(lv<0.26){u=lv/0.26;       return "rgb("+((92+108*u)|0)+","+((10+22*u)|0)+","+((46+58*u)|0)+")";}
+  if(lv<0.58){u=(lv-0.26)/0.32;return "rgb("+((200+55*u)|0)+","+((32+14*u)|0)+","+((104+32*u)|0)+")";}
+  u=(lv-0.58)/0.42;            return "rgb(255,"+((46+209*u)|0)+","+((136+119*u)|0)+")";
+}
+function paintCell(c,gx,gy,boost){
+  var i=gy*cols+gx,v=flum[i]||0,px=gx*cell+cell/2,py=gy*cell+cell/2;
+  if(boost) v=Math.min(1,v+boost*(v>0.26?0.30:0.16));
+  if(v<0.26){ // ambient field outside the portrait
+    var a=0.05+0.09*(boost||0);
+    if(v>0.16) a+=0.05;
+    c.fillStyle="rgba(150,150,170,"+a.toFixed(3)+")";
+  } else c.fillStyle=fcol(v);
+  c.fillText(chars[i],px,py);
+}
+function buildBase(){
+  if(!cols) return;
+  base.width=cv.width; base.height=cv.height;
+  bxc.setTransform(DPR,0,0,DPR,0,0);
+  bxc.clearRect(0,0,W,H);
+  bxc.font=FONT; bxc.textAlign="center"; bxc.textBaseline="middle";
+  for(var gy=0;gy<rows;gy++)for(var gx=0;gx<cols;gx++) paintCell(bxc,gx,gy,0);
+}
+function size(){
+  DPR=Math.min(devicePixelRatio||1,2);W=cv.clientWidth;H=cv.clientHeight;
+  cv.width=W*DPR;cv.height=H*DPR;x.setTransform(DPR,0,0,DPR,0,0);
+  cols=Math.ceil(W/cell)+1;rows=Math.ceil(H/cell)+1;
+  chars=new Array(cols*rows);
+  for(var i=0;i<cols*rows;i++) chars[i]=Math.random()<0.5?"0":"1";
+  sampleFace(); buildBase();
+}
 var hero=document.getElementById("top");
 hero.addEventListener("mousemove",function(e){var r=cv.getBoundingClientRect();mx=e.clientX-r.left;my=e.clientY-r.top;});
 hero.addEventListener("mouseleave",function(){mx=my=-9999;});
-addEventListener("resize",size);
-var t=0,rafH=null;
+addEventListener("resize",function(){clearTimeout(window.__hzr);window.__hzr=setTimeout(size,150);});
+var t=0,rafH=null,FLICK=coarse?120:420,RAD=coarse?110:120;
 function frame(){
   t+=0.016;
-  if(coarse){ mx=W*(0.70+0.15*Math.sin(t*0.5)); my=H*(0.46+0.20*Math.cos(t*0.42)); } // auto-sweep on touch
+  if(coarse){ mx=W*(0.70+0.15*Math.sin(t*0.5)); my=H*(0.46+0.20*Math.cos(t*0.42)); }
   x.clearRect(0,0,W,H);
-  x.font="700 12px 'SF Mono',ui-monospace,Menlo,monospace";x.textAlign="center";x.textBaseline="middle";
-  for(var gy=0;gy<rows;gy++){for(var gx=0;gx<cols;gx++){
-    var idx=gy*cols+gx,g=grid[idx];var px=gx*cell+cell/2,py=gy*cell+cell/2;
-    var fb=flum[idx]||0;
-    var wave=0.02+0.03*Math.sin((gx*0.5+gy*0.4)-t*1.3);
-    var dx2=px-mx,dy2=py-my,d=Math.sqrt(dx2*dx2+dy2*dy2);
-    var spot=d<160?(1-d/160):0; spot=spot*spot;
-    var target=Math.min(1,Math.max(fb, wave) + spot*1.15 + fb*spot*0.6);
-    g.b+=(target-g.b)*0.15;
-    if(Math.random()<0.008+spot*0.06+fb*0.03) g.c=Math.random()<.5?"0":"1";
-    var b=g.b;
-    if(b<0.10){x.fillStyle="rgba(120,120,140,"+(0.03+b*0.7).toFixed(3)+")";}
-    else{
-      var lv=(b-0.10)/0.90, rr,gg,bb;
-      if(lv<0.7){var u=lv/0.7;rr=Math.round(150+105*u);gg=Math.round(18+28*u);bb=Math.round(78+58*u);}
-      else{var w=(lv-0.7)/0.3;rr=255;gg=Math.round(46+209*w);bb=Math.round(136+119*w);}
-      x.fillStyle="rgb("+rr+","+gg+","+bb+")";
+  x.drawImage(base,0,0,W,H);
+  x.font=FONT;x.textAlign="center";x.textBaseline="middle";
+  // 1. living shimmer: swap a scattered handful of characters every frame
+  for(var k=0;k<FLICK;k++){
+    var gx=(Math.random()*cols)|0, gy=(Math.random()*rows)|0, i=gy*cols+gx;
+    chars[i]=Math.random()<0.5?"0":"1";
+    x.clearRect(gx*cell,gy*cell,cell,cell);
+    paintCell(x,gx,gy,0);
+    bxc.clearRect(gx*cell,gy*cell,cell,cell);
+    paintCell(bxc,gx,gy,0);
+  }
+  // 2. cursor spotlight brightens the characters it passes over
+  if(mx>-9000){
+    var c0=Math.max(0,((mx-RAD)/cell)|0), c1=Math.min(cols-1,((mx+RAD)/cell)|0);
+    var r0=Math.max(0,((my-RAD)/cell)|0), r1=Math.min(rows-1,((my+RAD)/cell)|0);
+    for(var gy2=r0;gy2<=r1;gy2++)for(var gx2=c0;gx2<=c1;gx2++){
+      var ddx=(gx2*cell+cell/2)-mx, ddy=(gy2*cell+cell/2)-my, dd=Math.sqrt(ddx*ddx+ddy*ddy);
+      if(dd>=RAD) continue;
+      var sp=1-dd/RAD; sp*=sp;
+      x.clearRect(gx2*cell,gy2*cell,cell,cell);
+      paintCell(x,gx2,gy2,sp);
     }
-    x.fillText(g.c,px,py);
-  }}
+  }
   rafH=requestAnimationFrame(frame);
 }
 size();
