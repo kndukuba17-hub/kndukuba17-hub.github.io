@@ -223,9 +223,13 @@
     nav{padding:11px 18px}
     .brand small{display:none}
     .getbtn{padding:8px 13px;font-size:.66rem}
-    .hero{min-height:600px}
-    .hero .wrap{padding-top:72px}
-    .hero h1{font-size:clamp(2.9rem,15.5vw,5rem);text-shadow:0 2px 26px rgba(0,0,0,.6)}
+    /* portrait occupies the top of the hero; the type sits underneath it, never over it */
+    .hero{min-height:640px;align-items:flex-end}
+    .hero .wrap{padding-top:0;padding-bottom:clamp(54px,11vh,104px)}
+    .hero h1{font-size:clamp(2.6rem,13.5vw,4.4rem);line-height:.92;text-shadow:0 2px 26px rgba(0,0,0,.72)}
+    .hero .role{margin-bottom:9px}
+    .hero .role .ey{text-shadow:0 2px 18px rgba(0,0,0,.8)}
+    .scrollmouse{display:none}
     .flow{margin:2px 0 18px}
     .flow .t{font-size:.82rem}
     .hmeta{font-size:.65rem;gap:7px 14px}
@@ -628,7 +632,7 @@ document.getElementById("msg").addEventListener("submit",function(e){
    resolve. A static base layer is rendered once; per frame we only repaint the flickering
    cells and the cells under the cursor, which keeps 47k characters at 60fps. */
 var cv=document.getElementById("bin"),x=cv.getContext("2d"),W,H,DPR,cols,rows,mx=-9999,my=-9999;
-var cell=coarse?9:4, FONT="700 "+(cell+1)+"px 'SF Mono',ui-monospace,Menlo,monospace";
+var cell=4, FONT="", narrow=false;
 var face=document.getElementById("face"),faceOK=false,flum=[],chars=[];
 var oc=document.createElement("canvas"),ox=oc.getContext("2d",{willReadFrequently:true});
 var base=document.createElement("canvas"),bxc=base.getContext("2d");
@@ -638,10 +642,18 @@ if(face.complete&&face.naturalWidth){faceOK=true;}
 function sampleFace(){
   if(!faceOK||!cols){flum=[];return;}
   oc.width=cols;oc.height=rows;ox.clearRect(0,0,cols,rows);
+  var iw=face.naturalWidth,ih=face.naturalHeight,scale,dw,dh,dx,dy;
   // CONTAIN (not cover) so the mortarboard is never cropped
-  var startC=Math.floor(cols*0.38),rw=cols-startC,rh=rows,iw=face.naturalWidth,ih=face.naturalHeight;
-  var scale=Math.min(rw/iw,rh/ih)*0.99,dw=iw*scale,dh=ih*scale;
-  var dx=startC+(rw-dw)*0.62,dy=(rh-dh)/2;
+  if(narrow){
+    // phones: portrait sits in the upper band, centred; the type lives underneath it
+    var rwN=cols,rhN=rows*0.56;
+    scale=Math.min(rwN/iw,rhN/ih)*0.98; dw=iw*scale; dh=ih*scale;
+    dx=(cols-dw)/2; dy=rows*0.015;
+  }else{
+    var startC=Math.floor(cols*0.38),rw=cols-startC,rh=rows;
+    scale=Math.min(rw/iw,rh/ih)*0.99; dw=iw*scale; dh=ih*scale;
+    dx=startC+(rw-dw)*0.62; dy=(rh-dh)/2;
+  }
   ox.drawImage(face,dx,dy,dw,dh);
   var d;try{d=ox.getImageData(0,0,cols,rows).data;}catch(e){return;}
   flum=new Float32Array(cols*rows);
@@ -675,6 +687,9 @@ function buildBase(){
 }
 function size(){
   DPR=Math.min(devicePixelRatio||1,2);W=cv.clientWidth;H=cv.clientHeight;
+  narrow=W<820;
+  cell=narrow?5:4;                       // phones keep a readable character size
+  FONT="700 "+(cell+1)+"px 'SF Mono',ui-monospace,Menlo,monospace";
   cv.width=W*DPR;cv.height=H*DPR;x.setTransform(DPR,0,0,DPR,0,0);
   cols=Math.ceil(W/cell)+1;rows=Math.ceil(H/cell)+1;
   chars=new Array(cols*rows);
@@ -685,10 +700,15 @@ var hero=document.getElementById("top");
 hero.addEventListener("mousemove",function(e){var r=cv.getBoundingClientRect();mx=e.clientX-r.left;my=e.clientY-r.top;});
 hero.addEventListener("mouseleave",function(){mx=my=-9999;});
 addEventListener("resize",function(){clearTimeout(window.__hzr);window.__hzr=setTimeout(size,150);});
-var t=0,rafH=null,FLICK=coarse?120:420,RAD=coarse?110:120;
+var t=0,rafH=null;
 function frame(){
+  var FLICK=narrow?150:420, RAD=narrow?90:120;
   t+=0.016;
-  if(coarse){ mx=W*(0.70+0.15*Math.sin(t*0.5)); my=H*(0.46+0.20*Math.cos(t*0.42)); }
+  // no cursor on touch: sweep a highlight across the portrait so it still feels alive
+  if(coarse){
+    if(narrow){ mx=W*(0.50+0.26*Math.sin(t*0.5)); my=H*(0.27+0.13*Math.cos(t*0.42)); }
+    else      { mx=W*(0.70+0.15*Math.sin(t*0.5)); my=H*(0.46+0.20*Math.cos(t*0.42)); }
+  }
   x.clearRect(0,0,W,H);
   x.drawImage(base,0,0,W,H);
   x.font=FONT;x.textAlign="center";x.textBaseline="middle";
