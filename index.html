@@ -228,7 +228,8 @@
     .hero .wrap{padding-top:0;padding-bottom:clamp(54px,11vh,104px)}
     .hero h1{font-size:clamp(2.6rem,13.5vw,4.4rem);line-height:.92;text-shadow:0 2px 26px rgba(0,0,0,.72)}
     .hero .role{margin-bottom:9px}
-    .hero .role .ey{text-shadow:0 2px 18px rgba(0,0,0,.8)}
+    /* tighter tracking so the eyebrow holds one line on a phone instead of orphaning "AI" */
+    .hero .role .ey{text-shadow:0 2px 18px rgba(0,0,0,.8);font-size:.58rem;letter-spacing:.14em;white-space:nowrap}
     .scrollmouse{display:none}
     .flow{margin:2px 0 18px}
     .flow .t{font-size:.82rem}
@@ -645,10 +646,10 @@ function sampleFace(){
   var iw=face.naturalWidth,ih=face.naturalHeight,scale,dw,dh,dx,dy;
   // CONTAIN (not cover) so the mortarboard is never cropped
   if(narrow){
-    // phones: portrait sits in the upper band, centred; the type lives underneath it
-    var rwN=cols,rhN=rows*0.56;
+    // phones: portrait sits in the upper band, centred, and STOPS well clear of the type
+    var rwN=cols,rhN=rows*0.46;
     scale=Math.min(rwN/iw,rhN/ih)*0.98; dw=iw*scale; dh=ih*scale;
-    dx=(cols-dw)/2; dy=rows*0.015;
+    dx=(cols-dw)/2; dy=rows*0.12;   // clear the fixed nav so the mortarboard isn't clipped
   }else{
     var startC=Math.floor(cols*0.38),rw=cols-startC,rh=rows;
     scale=Math.min(rw/iw,rh/ih)*0.99; dw=iw*scale; dh=ih*scale;
@@ -658,6 +659,22 @@ function sampleFace(){
   var d;try{d=ox.getImageData(0,0,cols,rows).data;}catch(e){return;}
   flum=new Float32Array(cols*rows);
   for(var i=0;i<cols*rows;i++) flum[i]=d[i*4]/255; // map is greyscale
+  if(narrow){
+    // On a phone the portrait is smaller, so two adjustments keep it friendly rather than gaunt:
+    // (1) lift the shadows a touch so the eye sockets read as features, not empty holes;
+    // (2) fade the last fifth of the figure out so it dissolves into the page instead of
+    //     ending on a hard rectangular edge.
+    var pBot=dy+dh, fadeH=dh*0.22;
+    for(var gy=0;gy<rows;gy++){
+      var f=gy>pBot-fadeH ? Math.max(0,(pBot-gy)/fadeH) : 1;
+      for(var gx=0;gx<cols;gx++){
+        var j=gy*cols+gx, v=flum[j];
+        // lift shadows, then pull the extremes toward the middle: blown highlights next to
+        // black sockets is what made the face read as a skull rather than a person
+        if(v>0) flum[j]=(0.52+(Math.pow(v,0.86)-0.52)*0.86)*f;
+      }
+    }
+  }
 }
 // colour ramp calibrated to measured map values:
 // cap .40  hair .32  eyes .52  gown .58  nose .70  cheek .78  teeth .97
@@ -687,8 +704,10 @@ function buildBase(){
 }
 function size(){
   DPR=Math.min(devicePixelRatio||1,2);W=cv.clientWidth;H=cv.clientHeight;
-  narrow=W<820;
-  cell=narrow?5:4;                       // phones keep a readable character size
+  narrow=W<=760;   // must match the CSS breakpoint below, or portrait and type collide on tablets
+  // phones get a finer grid: the portrait is physically smaller there, so it needs MORE
+  // characters across the face, not fewer, or the features collapse into hollows
+  cell=narrow?3:4;
   FONT="700 "+(cell+1)+"px 'SF Mono',ui-monospace,Menlo,monospace";
   cv.width=W*DPR;cv.height=H*DPR;x.setTransform(DPR,0,0,DPR,0,0);
   cols=Math.ceil(W/cell)+1;rows=Math.ceil(H/cell)+1;
@@ -702,7 +721,9 @@ hero.addEventListener("mouseleave",function(){mx=my=-9999;});
 addEventListener("resize",function(){clearTimeout(window.__hzr);window.__hzr=setTimeout(size,150);});
 var t=0,rafH=null;
 function frame(){
-  var FLICK=narrow?150:420, RAD=narrow?90:120;
+  // RAD is in px but the repaint cost scales with (RAD/cell)^2 — phones use a 3px cell,
+  // so keep the radius small there or the sweep repaints ~3x the cells for no visual gain
+  var FLICK=narrow?130:420, RAD=narrow?58:120;
   t+=0.016;
   // no cursor on touch: sweep a highlight across the portrait so it still feels alive
   if(coarse){
