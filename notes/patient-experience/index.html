@@ -1,0 +1,393 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Reading between the lines — measuring patient experience from unsolicited feedback | Kaycee Ndukuba</title>
+<meta name="description" content="A short technical note on multi-label domain scoring, annotator reliability, and what happened when I tried to break my own sentiment model.">
+<meta name="author" content="Kaycee Ndukuba">
+<meta property="og:title" content="Reading between the lines — measuring patient experience from unsolicited feedback">
+<meta property="og:description" content="Multi-label domain scoring, annotator reliability as a ceiling, and an evaluation that disproved my own assumption.">
+<meta property="og:type" content="article">
+<meta property="og:url" content="https://kndukuba17-hub.github.io/notes/patient-experience/">
+<link rel="canonical" href="https://kndukuba17-hub.github.io/notes/patient-experience/">
+<style>
+:root{
+  --paper:#F8F9FA; --card:#FFFFFF; --card-2:#F2F5F6;
+  --ink:#141C24; --body:#2C3A45; --muted:#5F6B76; --faint:#8A949E;
+  --rule:#DDE2E6; --rule-soft:#E9EDF0;
+  --accent:#0F6E6E; --accent-soft:#E6F0EF;
+  --flag:#9A5B00; --flag-soft:#FBF2E3;
+  --neg:#B03A30; --neg-soft:#FBEBEA; --pos:#1B7F51; --pos-soft:#E8F4EE;
+  --serif:Georgia,"Iowan Old Style","Times New Roman",serif;
+  --sans:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+  --mono:ui-monospace,"SF Mono",Menlo,Consolas,monospace;
+}
+@media (prefers-color-scheme:dark){
+  :root{--paper:#0E1418;--card:#141C21;--card-2:#19232A;--ink:#EDF1F3;--body:#C2CBD1;--muted:#8E9AA3;--faint:#6B767E;
+    --rule:#26313A;--rule-soft:#1D262D;--accent:#5FBFB4;--accent-soft:#14262A;--flag:#D9A250;--flag-soft:#241D12;
+    --neg:#E8776C;--neg-soft:#2A1917;--pos:#5FC08D;--pos-soft:#16261D;}
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--paper);color:var(--body);font-family:var(--sans);
+  font-size:16.5px;line-height:1.68;-webkit-font-smoothing:antialiased}
+.sheet{max-width:740px;margin:0 auto;padding:54px 26px 90px}
+.eyebrow{font-family:var(--mono);font-size:.68rem;letter-spacing:.2em;text-transform:uppercase;color:var(--accent);margin:0 0 18px}
+h1{font-family:var(--serif);font-size:clamp(1.85rem,4.4vw,2.5rem);line-height:1.18;font-weight:700;
+  color:var(--ink);margin:0 0 14px;letter-spacing:-.012em}
+.standfirst{font-size:1.09rem;color:var(--muted);margin:0 0 26px;max-width:60ch}
+.byline{display:flex;flex-wrap:wrap;gap:8px 18px;padding:15px 0;border-top:1px solid var(--rule);
+  border-bottom:1px solid var(--rule);font-family:var(--mono);font-size:.72rem;color:var(--faint);margin-bottom:38px}
+.byline b{color:var(--muted);font-weight:600}
+h2{font-family:var(--serif);font-size:1.34rem;color:var(--ink);font-weight:700;margin:44px 0 12px;letter-spacing:-.008em}
+h2 .n{font-family:var(--mono);font-size:.72rem;color:var(--accent);letter-spacing:.14em;display:block;margin-bottom:6px;font-weight:400}
+p{margin:0 0 16px;max-width:66ch}
+strong{color:var(--ink);font-weight:600}
+.callout{background:var(--card);border:1px solid var(--rule);border-left:3px solid var(--accent);
+  border-radius:0 6px 6px 0;padding:18px 22px;margin:24px 0}
+.callout p:last-child{margin-bottom:0}
+.callout .lab{font-family:var(--mono);font-size:.64rem;letter-spacing:.16em;text-transform:uppercase;color:var(--accent);display:block;margin-bottom:9px}
+.callout.flag{border-left-color:var(--flag);background:var(--flag-soft)}
+.callout.flag .lab{color:var(--flag)}
+
+/* ---- interactive blocks ---- */
+.demo{background:var(--card);border:1px solid var(--rule);border-radius:8px;padding:22px;margin:26px 0}
+.demo .dlab{font-family:var(--mono);font-size:.62rem;letter-spacing:.16em;text-transform:uppercase;
+  color:var(--accent);margin:0 0 14px;display:flex;align-items:center;gap:8px}
+.demo .dlab::after{content:"";flex:1;height:1px;background:var(--rule)}
+.quote{font-family:var(--serif);font-size:1.06rem;color:var(--ink);line-height:1.6;
+  background:var(--card-2);border-radius:6px;padding:16px 18px;margin:0 0 18px}
+.opts{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:16px}
+.opt{font-family:var(--sans);font-size:.85rem;padding:8px 13px;border-radius:6px;border:1px solid var(--rule);
+  background:transparent;color:var(--body);cursor:pointer;transition:.13s;text-align:left}
+.opt:hover{border-color:var(--accent);color:var(--ink)}
+.opt[aria-pressed="true"]{background:var(--accent-soft);border-color:var(--accent);color:var(--accent);font-weight:600}
+.opt:focus-visible,.btn:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.btn{font-family:var(--sans);font-size:.85rem;font-weight:600;padding:9px 16px;border-radius:6px;
+  border:1px solid var(--accent);background:var(--accent);color:var(--paper);cursor:pointer;transition:.13s}
+.btn:hover{opacity:.88}
+.btn[disabled]{opacity:.4;cursor:default}
+.btn.ghost{background:transparent;color:var(--accent)}
+.reveal{margin-top:16px;padding-top:16px;border-top:1px solid var(--rule);display:none}
+.reveal.on{display:block}
+.reveal p:last-child{margin-bottom:0}
+.dom{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:9px 0;border-bottom:1px solid var(--rule-soft);font-size:.9rem}
+.dom:last-child{border-bottom:0}
+.dom .nm{color:var(--ink)}
+.pill{font-family:var(--mono);font-size:.66rem;letter-spacing:.08em;text-transform:uppercase;
+  padding:3px 9px;border-radius:99px;white-space:nowrap;font-weight:600}
+.pill.neg{background:var(--neg-soft);color:var(--neg)}
+.pill.pos{background:var(--pos-soft);color:var(--pos)}
+.pill.na{background:var(--rule-soft);color:var(--faint)}
+.toggles{display:flex;flex-wrap:wrap;gap:10px;margin-bottom:16px}
+.tog{display:inline-flex;align-items:center;gap:8px;font-size:.88rem;color:var(--body);cursor:pointer;
+  border:1px solid var(--rule);border-radius:6px;padding:9px 13px;transition:.13s}
+.tog:hover{border-color:var(--accent)}
+.tog input{accent-color:var(--accent);width:16px;height:16px;cursor:pointer}
+.meter{margin-top:6px}
+.meter .track{height:34px;background:var(--card-2);border-radius:6px;overflow:hidden;position:relative}
+.meter .fill{height:100%;background:var(--neg);width:0;transition:width .45s cubic-bezier(.3,.8,.3,1)}
+.meter .val{position:absolute;top:0;left:0;right:0;height:100%;display:flex;align-items:center;
+  padding:0 13px;font-family:var(--mono);font-size:.88rem;font-weight:700;color:var(--ink);
+  font-variant-numeric:tabular-nums;mix-blend-mode:normal}
+.meter .cap{font-family:var(--mono);font-size:.68rem;color:var(--muted);margin-top:7px;display:block}
+.sent{padding:13px 0;border-bottom:1px solid var(--rule-soft)}
+.sent:last-of-type{border-bottom:0}
+.sent .txt{font-family:var(--serif);color:var(--ink);font-size:1rem;margin-bottom:9px}
+.sent .row{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.score{font-family:var(--mono);font-size:.95rem;color:var(--ink);font-weight:700;margin-top:16px;
+  padding-top:14px;border-top:1px solid var(--rule)}
+.score span{color:var(--accent)}
+.scroll{overflow-x:auto}
+table{width:100%;border-collapse:collapse;margin:20px 0;font-size:.92rem}
+th{text-align:left;font-family:var(--mono);font-size:.66rem;letter-spacing:.1em;text-transform:uppercase;
+  color:var(--muted);font-weight:600;padding:0 14px 9px 0;border-bottom:1px solid var(--rule);white-space:nowrap}
+td{padding:11px 14px 11px 0;border-bottom:1px solid var(--rule-soft);vertical-align:top}
+td.num{font-family:var(--mono);font-variant-numeric:tabular-nums;color:var(--ink);white-space:nowrap}
+ul{margin:0 0 16px;padding-left:22px;max-width:66ch}
+li{margin-bottom:9px}li::marker{color:var(--accent)}
+.refs{margin-top:52px;padding-top:22px;border-top:1px solid var(--rule);font-size:.85rem;color:var(--muted)}
+.refs h3{font-family:var(--mono);font-size:.68rem;letter-spacing:.16em;text-transform:uppercase;color:var(--faint);margin:0 0 12px;font-weight:600}
+.refs p{margin-bottom:9px;max-width:none}
+a{color:var(--accent);text-underline-offset:2px}
+.foot{margin-top:34px;padding-top:20px;border-top:1px solid var(--rule);font-size:.9rem;color:var(--muted)}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+@media (max-width:620px){.sheet{padding:36px 18px 70px}body{font-size:16px}.demo{padding:18px}}
+</style>
+</head>
+<body>
+<article class="sheet">
+
+<p class="eyebrow">Technical note</p>
+<h1>Reading between the lines</h1>
+<p class="standfirst">Measuring patient experience from unsolicited feedback — and what happened when I
+tried to break my own sentiment model.</p>
+
+<div class="byline">
+  <span><b>Kaycee Ndukuba</b></span>
+  <span>MSc Applied Data Science · BSc Psychology</span>
+  <span>Three interactive exercises · 5 min</span>
+</div>
+
+<p>Turning unsolicited patient comments into a comparable score is, in the language of my first degree, a
+<strong>construct validation</strong> problem: the claim that something cheap and instantaneous tracks
+something expensive and slow. That is the same argument psychometrics has been having for a century, and
+it is why I think about text models the way I do.</p>
+
+<p>Three notes on that problem. Each one has a short exercise, because these points are easier to
+experience than to be told. Every model figure below is real and reproducible.</p>
+
+<h2><span class="n">01</span>One comment is not one score</h2>
+
+<p>A single comment routinely touches several domains at once — and, more awkwardly, can be
+<strong>positive about one and negative about another in the same breath</strong>.</p>
+
+<div class="demo">
+  <p class="dlab">Exercise 1 · Tag the domains</p>
+  <p class="quote">"Arrived at 7am for a 9am appointment and wasn't seen until half one. Nobody told us
+  what was happening or how long it would be. The nurse who finally took my bloods was lovely — she
+  explained everything properly and couldn't have been kinder."</p>
+  <p style="font-size:.9rem;color:var(--muted);margin-bottom:12px">Which domains does this comment speak to? Tick all that apply.</p>
+  <div class="opts" id="domOpts"></div>
+  <button class="btn" id="domBtn">Show the answer</button>
+  <div class="reveal" id="domRev">
+    <div id="domList"></div>
+    <p style="margin-top:16px"><strong>This comment is four labels, with two different polarities.</strong>
+    A single overall sentiment score averages it to roughly neutral and destroys everything actionable in it:
+    the access failure and the communication failure both disappear, and so does the fact that the clinical
+    interaction was genuinely good.</p>
+    <p>That is why domain assignment has to be a set of binary relevance decisions rather than one
+    seven-way choice, with sentiment scored <em>per domain</em>. It also means evaluation has to be
+    per-domain — a headline average lets a frequent domain quietly carry a rare one.</p>
+  </div>
+</div>
+
+<p>The 1–5 score compounds this. It is <strong>ordinal</strong> — the gap between 1 and 5 is not the same
+as the gap between 4 and 5 — so standard classification is blind to the ordering and penalises a
+near-miss exactly as hard as a total miss. An ordinal formulation evaluated with quadratic weighted kappa
+or mean absolute error respects that difference.</p>
+
+<h2><span class="n">02</span>What happened when I tested my own assumption</h2>
+
+<p>I built a three-class sentiment classifier on <strong>14,640 real airline customer messages</strong> —
+the closest public analogue I have to unsolicited service feedback. It reaches 79.3% accuracy and
+<strong>0.721 macro F1</strong> on a held-out split. I report macro F1 rather than accuracy because the
+data skews heavily negative, as every complaints channel does, and accuracy would flatter a model that
+simply guessed the majority class.</p>
+
+<p>The pipeline extracts structural features from the raw text before cleaning — capitalisation,
+exclamation and question marks, emoji. I had written that these gave the model purchase on <em>tone</em>,
+and therefore on sarcasm. Then it occurred to me I had asserted that without ever testing it.</p>
+
+<div class="demo">
+  <p class="dlab">Exercise 2 · The ablation</p>
+  <p style="font-size:.9rem;color:var(--muted);margin-bottom:14px">Same sentence, tone markers switched on
+  and off. If my claim were right, removing them should make the model <em>less</em> sure it's negative.</p>
+  <p class="quote" id="ablQuote"></p>
+  <div class="toggles">
+    <label class="tog"><input type="checkbox" id="tCaps" checked> Capitalisation</label>
+    <label class="tog"><input type="checkbox" id="tBang" checked> Exclamation marks</label>
+  </div>
+  <div class="meter">
+    <div class="track"><div class="fill" id="ablFill"></div><div class="val" id="ablVal"></div></div>
+    <span class="cap">P(negative) — real output from the deployed model</span>
+  </div>
+  <div class="reveal on" style="border-top:0;padding-top:14px">
+    <p id="ablNote" style="font-size:.92rem"></p>
+  </div>
+</div>
+
+<p>The prediction moves the <strong>wrong way</strong>. Stripping the tone markers made the model
+<em>more</em> confident, not less. The structural features were not carrying that example — the words
+were, and they did a cleaner job without the markers muddying them. My claim was wrong.</p>
+
+<p>So I pushed harder, with sentences whose surface wording is uniformly positive and only the intent is
+negative.</p>
+
+<div class="demo">
+  <p class="dlab">Exercise 3 · Can you beat the model?</p>
+  <p style="font-size:.9rem;color:var(--muted);margin-bottom:6px">Five sarcastic sentences. Mark each one
+  as a human would read it, then see what the model said.</p>
+  <div id="sarcList"></div>
+  <button class="btn" id="sarcBtn" disabled>Reveal the model's answers</button>
+  <div class="reveal" id="sarcRev">
+    <p class="score" id="sarcScore"></p>
+    <p style="margin-top:14px">Both successes contain negative lexical content that leaks through —
+    <em>worst enemy</em>, <em>losing my luggage</em>. The three failures are uniformly positive on the
+    surface. On the last one the model is <strong>99% confident and completely wrong</strong>.</p>
+  </div>
+</div>
+
+<div class="callout">
+  <span class="lab">Why this happens</span>
+  <p>Bag-of-words has no mechanism for <strong>incongruity</strong>. Sarcasm is a contradiction between a
+  positive expression and a negative situation, and a representation that treats a sentence as an unordered
+  collection of tokens has nothing that can be in tension with anything else. Counting exclamation marks
+  does not fix it, because the marker is not the meaning. The remedy is a contextual encoder, where
+  <em>love</em> and <em>stuck on the tarmac</em> can inform one another.</p>
+</div>
+
+<div class="callout flag">
+  <span class="lab">The failure that matters more</span>
+  <p>Note that an abstention threshold would not have caught the worst case. The model was 99% confident
+  and wrong, so a confidence cut-off never fires. That is a <strong>calibration</strong> failure, distinct
+  from an accuracy failure — and where a score may trigger an intervention, it is the more consequential of
+  the two. Reliability curves and expected calibration error belong next to the headline metric, not after it.</p>
+</div>
+
+<h2><span class="n">03</span>The label ceiling, and who bothers to write</h2>
+
+<p>A model trained on expertly annotated comments inherits whatever agreement those annotators had. If two
+trained humans reading the same sentence disagree on whether it reflects emotional support, no amount of
+modelling recovers a ground truth that was never there. <strong>Inter-annotator agreement is a ceiling on
+achievable performance</strong>, not a footnote — Cohen's kappa for two raters, Krippendorff's alpha where
+coverage is uneven.</p>
+
+<p>The useful part is diagnostic: the domains where annotators disagree most are the domains where the
+construct is least well defined, which tells you where the <em>definition</em> needs work before the model
+does. My untested prior is that emotional support is hardest of the seven, because it depends most on
+inference about what a patient meant rather than what they said.</p>
+
+<p>Separately, unsolicited feedback over-represents the extremes and skews by age, digital access and
+condition type — and often the patients whose experience matters most are least likely to post. Validation
+against an established survey is the substantive answer to that. The question I would want to understand is
+where it holds and where it thins: how alignment behaves in low-volume subgroups, and whether
+location-level scores carry uncertainty alongside them. A score built on nine comments and one built on
+nine hundred should not look identical on a dashboard, because a hospital will act on both as if they were.</p>
+
+<h2><span class="n">04</span>What I would look at first</h2>
+<ul>
+  <li><strong>The annotation guidelines and the agreement statistics</strong>, before touching a model. You
+  cannot improve a measurement whose definition you have not read.</li>
+  <li><strong>Where the residual error concentrates per domain</strong> — and whether one domain is simply
+  harder than the rest.</li>
+  <li><strong>Calibration, not only accuracy</strong>, for any score that drives an intervention.</li>
+  <li><strong>A client conversation, early.</strong> I don't think the write-up can be written well by
+  someone who has never heard the question being asked.</li>
+</ul>
+
+<div class="refs">
+  <h3>Notes on sources</h3>
+  <p>The patient comment in Exercise 1 is an illustrative composite written for this note, not a real
+  review. Domain names follow the seven-domain framing used in published patient-experience measurement.</p>
+  <p>All model figures are real output from a classifier I trained on the Twitter US Airline Sentiment
+  dataset (14,640 messages) and are reproducible from source:
+  <span style="font-family:var(--mono);font-size:.85em">python -m src.train_export</span> and
+  <span style="font-family:var(--mono);font-size:.85em">python -m src.sarcasm_probe</span>. The model is
+  deployed to AWS Lambda as a container image with CloudWatch monitoring.</p>
+  <p>Gerlach, M., Farb, B., Revelle, W., &amp; Nunes Amaral, L. A. (2018). "A robust data-driven approach to
+  identifying types of personality." <em>Nature Human Behaviour</em> — referenced in my related work on
+  603,322 IPIP-FFM responses.</p>
+</div>
+
+<p class="foot">Code and write-ups: <a href="https://github.com/kndukuba17-hub">github.com/kndukuba17-hub</a>
+· Portfolio: <a href="https://kndukuba17-hub.github.io/">kndukuba17-hub.github.io</a></p>
+
+</article>
+
+<script>
+/* ---------- Exercise 1: domain tagging ---------- */
+var DOMAINS=[
+ {n:"Fast access",v:"neg",why:"7am appointment seen at 1:30pm"},
+ {n:"Communication",v:"neg",why:"“nobody told us what was happening”"},
+ {n:"Emotional support",v:"pos",why:"“couldn't have been kinder”"},
+ {n:"Effective treatment",v:"pos",why:"bloods taken, explained properly"},
+ {n:"Continuity of care",v:"na",why:"not mentioned"},
+ {n:"Physical & environmental needs",v:"na",why:"not mentioned"},
+ {n:"Billing & administration",v:"na",why:"not mentioned"}
+];
+var picked={};
+var optBox=document.getElementById("domOpts");
+DOMAINS.forEach(function(d,i){
+  var b=document.createElement("button");
+  b.className="opt";b.type="button";b.textContent=d.n;b.setAttribute("aria-pressed","false");
+  b.onclick=function(){picked[i]=!picked[i];b.setAttribute("aria-pressed",picked[i]?"true":"false");};
+  optBox.appendChild(b);
+});
+document.getElementById("domBtn").onclick=function(){
+  var list=document.getElementById("domList");
+  list.innerHTML=DOMAINS.map(function(d){
+    var cls=d.v==="neg"?"neg":d.v==="pos"?"pos":"na";
+    var txt=d.v==="neg"?"Negative":d.v==="pos"?"Positive":"Not raised";
+    return '<div class="dom"><span class="nm">'+d.n+
+      ' <span style="color:var(--faint);font-size:.85em">— '+d.why+'</span></span>'+
+      '<span class="pill '+cls+'">'+txt+'</span></div>';
+  }).join("");
+  document.getElementById("domRev").classList.add("on");
+  this.disabled=true;this.textContent="Answer shown";
+};
+
+/* ---------- Exercise 2: ablation (real measured values) ---------- */
+var ABL={
+ "1,1":{p:0.715,t:"Great. Only waited FOUR HOURS at the gate with no information. Wonderful!!"},
+ "1,0":{p:0.769,t:"Great. Only waited FOUR HOURS at the gate with no information. Wonderful"},
+ "0,1":{p:0.752,t:"great. only waited four hours at the gate with no information. wonderful!!"},
+ "0,0":{p:0.801,t:"great. only waited four hours at the gate with no information. wonderful"}
+};
+function abl(){
+  var c=document.getElementById("tCaps").checked?1:0;
+  var b=document.getElementById("tBang").checked?1:0;
+  var d=ABL[c+","+b];
+  document.getElementById("ablQuote").textContent="“"+d.t+"”";
+  document.getElementById("ablFill").style.width=(d.p*100).toFixed(1)+"%";
+  document.getElementById("ablVal").textContent="P(negative) = "+d.p.toFixed(3);
+  var note=document.getElementById("ablNote");
+  if(c===0&&b===0){
+    note.innerHTML="<strong>Both markers removed — and the model is at its most certain (0.801).</strong> "+
+      "The opposite of what I predicted. The tone features were not carrying this example at all.";
+  }else if(c===1&&b===1){
+    note.innerHTML="The original sentence, with every tone marker present: <strong>0.715</strong> — "+
+      "the <em>lowest</em> confidence of the four variants. Try switching them off.";
+  }else{
+    note.innerHTML="Removing one marker already raises confidence. Switch off both to see the full effect.";
+  }
+}
+document.getElementById("tCaps").onchange=abl;
+document.getElementById("tBang").onchange=abl;
+abl();
+
+/* ---------- Exercise 3: sarcasm gauntlet (real model output) ---------- */
+var SARC=[
+ {t:"Absolutely brilliant service. Ten out of ten. Would recommend to my worst enemy.",pred:"negative",p:0.94},
+ {t:"Fantastic job losing my luggage again, really appreciate it.",pred:"negative",p:0.71},
+ {t:"Wonderful. Just wonderful.",pred:"positive",p:0.08},
+ {t:"Love being stuck on the tarmac. Best part of my day.",pred:"positive",p:0.07},
+ {t:"Thanks for the amazing 5 hour delay, you guys are the best.",pred:"positive",p:0.01}
+];
+var guesses={};
+var sBox=document.getElementById("sarcList");
+SARC.forEach(function(s,i){
+  var d=document.createElement("div");d.className="sent";
+  d.innerHTML='<div class="txt">“'+s.t+'”</div><div class="row" data-i="'+i+'">'+
+    '<button class="opt" type="button" data-v="negative" aria-pressed="false">Negative</button>'+
+    '<button class="opt" type="button" data-v="positive" aria-pressed="false">Positive</button>'+
+    '<span class="pill na" style="display:none"></span></div>';
+  sBox.appendChild(d);
+});
+sBox.addEventListener("click",function(e){
+  var b=e.target.closest("button.opt"); if(!b) return;
+  var row=b.parentNode, i=row.dataset.i;
+  [].forEach.call(row.querySelectorAll("button.opt"),function(x){x.setAttribute("aria-pressed","false");});
+  b.setAttribute("aria-pressed","true"); guesses[i]=b.dataset.v;
+  document.getElementById("sarcBtn").disabled = Object.keys(guesses).length<5;
+});
+document.getElementById("sarcBtn").onclick=function(){
+  var you=0, model=0;
+  [].forEach.call(sBox.querySelectorAll(".row"),function(row){
+    var i=row.dataset.i, s=SARC[i];
+    if(guesses[i]==="negative") you++;
+    if(s.pred==="negative") model++;
+    var pill=row.querySelector(".pill");
+    pill.style.display="inline-block";
+    pill.className="pill "+(s.pred==="negative"?"pos":"neg");
+    pill.textContent="Model: "+s.pred+" ("+s.p.toFixed(2)+")";
+    [].forEach.call(row.querySelectorAll("button.opt"),function(x){x.disabled=true;});
+  });
+  document.getElementById("sarcScore").innerHTML=
+    "You read "+you+" of 5 as negative. <span>The model caught "+model+" of 5.</span>";
+  document.getElementById("sarcRev").classList.add("on");
+  this.disabled=true;this.textContent="Answers shown";
+};
+</script>
+</body>
+</html>
