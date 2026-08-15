@@ -4,10 +4,10 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Reading between the lines — measuring patient experience from unsolicited feedback | Kaycee Ndukuba</title>
-<meta name="description" content="A short technical note on multi-label domain scoring, where a sentiment model's errors actually go, and what happened when I tested one of my own assumptions.">
+<meta name="description" content="A short technical note on multi-label domain scoring, asymmetric error costs, and why aggregate calibration is not a safety guarantee for a patient-experience score.">
 <meta name="author" content="Kaycee Ndukuba">
 <meta property="og:title" content="Reading between the lines — measuring patient experience from unsolicited feedback">
-<meta property="og:description" content="Multi-label domain scoring, where the errors actually go, and an evaluation that disproved my own assumption.">
+<meta property="og:description" content="Multi-label domain scoring, asymmetric error costs, and why aggregate calibration is not a safety guarantee.">
 <meta property="og:type" content="article">
 <meta property="og:url" content="https://kndukuba17-hub.github.io/notes/patient-experience/">
 <link rel="canonical" href="https://kndukuba17-hub.github.io/notes/patient-experience/">
@@ -109,8 +109,9 @@ a:focus-visible{outline:2px solid var(--accent);outline-offset:2px;border-radius
 
 <p class="eyebrow">Technical note</p>
 <h1>Reading between the lines</h1>
-<p class="standfirst">Measuring patient experience from unsolicited feedback — where a sentiment model's
-errors actually go, and what happened when I tested one of my own assumptions.</p>
+<p class="standfirst">Measuring patient experience from unsolicited feedback: what a sentiment model gets
+right, where it breaks, and why the difference between those two decides what a score is safe to
+act on.</p>
 
 <div class="byline">
   <span><b>Kaycee Ndukuba</b></span>
@@ -130,9 +131,9 @@ output from that model and reproducible from source.</p>
 
 <div class="stats">
   <div class="stat"><b>14,640</b><span>real customer messages</span></div>
+  <div class="stat"><b>91.6%</b><span>of negative feedback caught</span></div>
   <div class="stat"><b>0.721</b><span>macro F1, held out</span></div>
-  <div class="stat"><b>79.3%</b><span>accuracy, held out</span></div>
-  <div class="stat"><b>2 of 5</b><span>sarcasm cases caught</span></div>
+  <div class="stat"><b>94.7%</b><span>correct when it says 90%+</span></div>
 </div>
 
 <h2><span class="n">01</span>One comment is not one score</h2>
@@ -149,13 +150,13 @@ everything properly and couldn't have been kinder."</p>
     <h3>The same comment, resolved per domain</h3>
     <p class="sub">Four labels, two polarities, one comment</p>
     <div class="dmap">
-      <div class="drow"><span class="nm">Fast access<span class="why">7am appointment, seen at 13:30</span></span><span class="chip neg">Negative</span></div>
-      <div class="drow"><span class="nm">Communication<span class="why">"nobody told us what was happening"</span></span><span class="chip neg">Negative</span></div>
-      <div class="drow"><span class="nm">Emotional support<span class="why">"couldn't have been kinder"</span></span><span class="chip pos">Positive</span></div>
-      <div class="drow"><span class="nm">Effective treatment<span class="why">"explained everything properly"</span></span><span class="chip pos">Positive</span></div>
-      <div class="drow off"><span class="nm">Continuity of care</span><span class="chip na">Not raised</span></div>
-      <div class="drow off"><span class="nm">Physical &amp; environmental needs</span><span class="chip na">Not raised</span></div>
-      <div class="drow off"><span class="nm">Billing &amp; administration</span><span class="chip na">Not raised</span></div>
+      <div class="drow"><span class="nm">Fast Access<span class="why">7am appointment, seen at 13:30</span></span><span class="chip neg">Negative</span></div>
+      <div class="drow"><span class="nm">Communication &amp; Involvement<span class="why">"nobody told us what was happening"</span></span><span class="chip neg">Negative</span></div>
+      <div class="drow"><span class="nm">Emotional Support<span class="why">"couldn't have been kinder"</span></span><span class="chip pos">Positive</span></div>
+      <div class="drow"><span class="nm">Effective Treatment<span class="why">"explained everything properly"</span></span><span class="chip pos">Positive</span></div>
+      <div class="drow off"><span class="nm">Continuity of Care</span><span class="chip na">Not raised</span></div>
+      <div class="drow off"><span class="nm">Attention to Physical &amp; Environmental Needs</span><span class="chip na">Not raised</span></div>
+      <div class="drow off"><span class="nm">Billing &amp; Administration</span><span class="chip na">Not raised</span></div>
     </div>
   </div>
   <figcaption><b>A single overall sentiment score averages this to roughly neutral</b> and destroys
@@ -172,7 +173,36 @@ the gap between 4 and 5, but standard classification is blind to that and penali
 hard as a total miss. An ordinal formulation evaluated with quadratic weighted kappa or mean absolute
 error respects the difference.</p>
 
-<h2><span class="n">02</span>The headline metric hides the weakest class</h2>
+<h2><span class="n">02</span>What the model gets right, and why the errors lean the right way</h2>
+
+<p>The job that matters in a feedback pipeline is catching the unhappy patient. On that specific job this
+model is strong: it identifies <strong>91.6% of all negative messages</strong> (F1 0.875 on that class).
+If the purpose is routing complaints to a human, missing fewer than one in ten is the number that counts.</p>
+
+<p>The error structure is the more interesting part, because errors are not symmetrical in their cost.</p>
+
+<figure>
+  <div class="fig">
+    <h3>Confusion matrix, held-out set (n = 1,464)</h3>
+    <p class="sub">Rows are the true label, columns the prediction</p>
+    <svg id="c-cm" viewBox="0 0 640 236" role="img" aria-label="Confusion matrix: 841 of 918 negative messages correctly identified; 118 neutral messages predicted negative"></svg>
+  </div>
+  <figcaption>The dominant error is <b>118 neutral messages predicted negative</b> — the model
+  over-flags rather than under-flags. For a triage system that is the <b>cheaper direction to be wrong
+  in</b>: a false alarm costs someone a minute, a missed complaint costs a patient. The error profile
+  suits the use case.</figcaption>
+</figure>
+
+<div class="callout">
+  <span class="lab">The caveat that comes with it</span>
+  <p>That same bias becomes a liability the moment the output is used as a <em>measure</em> rather than a
+  queue. A system that leans toward "negative" will inflate an organisation's apparent complaint volume,
+  and a trust comparing itself year on year would read a model artefact as a real decline. The same
+  behaviour is a feature for routing and a bug for benchmarking — which is an argument for calibrating
+  the decision threshold separately for each use, rather than shipping one score for both.</p>
+</div>
+
+<h2><span class="n">03</span>Why I report macro F1 and not accuracy</h2>
 
 <p>Feedback channels are lopsided. Mine is 63% negative, which is entirely normal — people write when
 something went wrong.</p>
@@ -197,24 +227,7 @@ something went wrong.</p>
   against negative's 0.875</b> — and neutral is precisely where ambiguous, understated feedback lands.</figcaption>
 </figure>
 
-<h2><span class="n">03</span>Where the errors actually go</h2>
-
-<p>A single number tells you how much is wrong. The confusion structure tells you <em>what</em> is wrong,
-which is the part you can act on.</p>
-
-<figure>
-  <div class="fig">
-    <h3>Confusion matrix, held-out set (n = 1,464)</h3>
-    <p class="sub">Rows are the true label, columns the prediction</p>
-    <svg id="c-cm" viewBox="0 0 640 236" role="img" aria-label="Confusion matrix showing 118 neutral messages misclassified as negative"></svg>
-  </div>
-  <figcaption><b>118 of 310 genuinely neutral messages are predicted negative</b> — the single largest
-  error in the model, and a directional one. Applied to patient feedback, that specific failure would
-  inflate an organisation's apparent complaint volume and send people chasing problems that were never
-  raised.</figcaption>
-</figure>
-
-<h2><span class="n">04</span>I tested one of my own claims and it was wrong</h2>
+<h2><span class="n">04</span>Checking a claim I had made</h2>
 
 <p>The pipeline extracts structural features from the raw text before cleaning — capitalisation,
 exclamation and question marks, emoji. I had written that these gave the model purchase on <em>tone</em>,
@@ -261,10 +274,10 @@ negative.</p>
   <em>love</em> and <em>stuck on the tarmac</em> can inform one another.</p>
 </div>
 
-<h2><span class="n">05</span>Well calibrated, and still catastrophically wrong</h2>
+<h2><span class="n">05</span>What confidence does and does not tell you</h2>
 
 <p>The obvious response to the above is an abstention threshold — route anything the model is unsure about
-to a human. So I checked whether the model's confidence means anything.</p>
+to a human. That only works if confidence means something, so I checked.</p>
 
 <figure>
   <div class="fig">
