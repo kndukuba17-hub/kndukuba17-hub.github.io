@@ -4,280 +4,338 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Reading between the lines — measuring patient experience from unsolicited feedback | Kaycee Ndukuba</title>
-<meta name="description" content="A short technical note on multi-label domain scoring, annotator reliability, and what happened when I tried to break my own sentiment model.">
+<meta name="description" content="A short technical note on multi-label domain scoring, where a sentiment model's errors actually go, and what happened when I tested one of my own assumptions.">
 <meta name="author" content="Kaycee Ndukuba">
 <meta property="og:title" content="Reading between the lines — measuring patient experience from unsolicited feedback">
-<meta property="og:description" content="Multi-label domain scoring, annotator reliability as a ceiling, and an evaluation that disproved my own assumption.">
+<meta property="og:description" content="Multi-label domain scoring, where the errors actually go, and an evaluation that disproved my own assumption.">
 <meta property="og:type" content="article">
 <meta property="og:url" content="https://kndukuba17-hub.github.io/notes/patient-experience/">
 <link rel="canonical" href="https://kndukuba17-hub.github.io/notes/patient-experience/">
 <style>
 :root{
-  --paper:#F8F9FA; --card:#FFFFFF; --card-2:#F2F5F6;
-  --ink:#141C24; --body:#2C3A45; --muted:#5F6B76; --faint:#8A949E;
-  --rule:#DDE2E6; --rule-soft:#E9EDF0;
-  --accent:#0F6E6E; --accent-soft:#E6F0EF;
-  --flag:#9A5B00; --flag-soft:#FBF2E3;
-  --neg:#B03A30; --neg-soft:#FBEBEA; --pos:#1B7F51; --pos-soft:#E8F4EE;
+  --paper:#FCFCFB; --card:#FFFFFF; --card-2:#F3F5F6;
+  --ink:#141C24; --body:#2E3B46; --muted:#5F6B76; --faint:#8A949E;
+  --rule:#DEE3E7; --rule-soft:#EBEEF0;
+  --accent:#0F6E6E; --accent-soft:#E4EFEE;
+  --amber:#B4530E; --blue:#1064A4;
+  --grid:#E6EAEC;
   --serif:Georgia,"Iowan Old Style","Times New Roman",serif;
   --sans:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
   --mono:ui-monospace,"SF Mono",Menlo,Consolas,monospace;
 }
 @media (prefers-color-scheme:dark){
-  :root{--paper:#0E1418;--card:#141C21;--card-2:#19232A;--ink:#EDF1F3;--body:#C2CBD1;--muted:#8E9AA3;--faint:#6B767E;
-    --rule:#26313A;--rule-soft:#1D262D;--accent:#5FBFB4;--accent-soft:#14262A;--flag:#D9A250;--flag-soft:#241D12;
-    --neg:#E8776C;--neg-soft:#2A1917;--pos:#5FC08D;--pos-soft:#16261D;}
+  :root{--paper:#0F151A;--card:#161F25;--card-2:#1C262D;--ink:#EDF1F3;--body:#C4CDD3;--muted:#8E9AA3;--faint:#6B767E;
+    --rule:#27323B;--rule-soft:#1E272E;--accent:#5FBFB4;--accent-soft:#15272B;
+    --amber:#C07C2E;--blue:#4491C6;--grid:#232E36;}
 }
 *{box-sizing:border-box}
+html{scroll-behavior:smooth}
+@media (prefers-reduced-motion:reduce){html{scroll-behavior:auto}}
 body{margin:0;background:var(--paper);color:var(--body);font-family:var(--sans);
   font-size:16.5px;line-height:1.68;-webkit-font-smoothing:antialiased}
-.sheet{max-width:740px;margin:0 auto;padding:54px 26px 90px}
+#prog{position:fixed;top:0;left:0;height:2px;width:0;background:var(--accent);z-index:50;transition:width .1s linear}
+.sheet{max-width:760px;margin:0 auto;padding:56px 26px 90px}
 .eyebrow{font-family:var(--mono);font-size:.68rem;letter-spacing:.2em;text-transform:uppercase;color:var(--accent);margin:0 0 18px}
-h1{font-family:var(--serif);font-size:clamp(1.85rem,4.4vw,2.5rem);line-height:1.18;font-weight:700;
-  color:var(--ink);margin:0 0 14px;letter-spacing:-.012em}
-.standfirst{font-size:1.09rem;color:var(--muted);margin:0 0 26px;max-width:60ch}
+h1{font-family:var(--serif);font-size:clamp(1.9rem,4.6vw,2.6rem);line-height:1.16;font-weight:700;
+  color:var(--ink);margin:0 0 14px;letter-spacing:-.014em}
+.standfirst{font-size:1.11rem;color:var(--muted);margin:0 0 28px;max-width:60ch}
 .byline{display:flex;flex-wrap:wrap;gap:8px 18px;padding:15px 0;border-top:1px solid var(--rule);
-  border-bottom:1px solid var(--rule);font-family:var(--mono);font-size:.72rem;color:var(--faint);margin-bottom:38px}
+  border-bottom:1px solid var(--rule);font-family:var(--mono);font-size:.72rem;color:var(--faint);margin-bottom:40px}
 .byline b{color:var(--muted);font-weight:600}
-h2{font-family:var(--serif);font-size:1.34rem;color:var(--ink);font-weight:700;margin:44px 0 12px;letter-spacing:-.008em}
-h2 .n{font-family:var(--mono);font-size:.72rem;color:var(--accent);letter-spacing:.14em;display:block;margin-bottom:6px;font-weight:400}
+h2{font-family:var(--serif);font-size:1.36rem;color:var(--ink);font-weight:700;margin:52px 0 12px;letter-spacing:-.008em}
+h2 .n{font-family:var(--mono);font-size:.7rem;color:var(--accent);letter-spacing:.14em;display:block;margin-bottom:7px;font-weight:400}
 p{margin:0 0 16px;max-width:66ch}
 strong{color:var(--ink);font-weight:600}
+.lede{font-size:1.04rem;color:var(--ink)}
 .callout{background:var(--card);border:1px solid var(--rule);border-left:3px solid var(--accent);
-  border-radius:0 6px 6px 0;padding:18px 22px;margin:24px 0}
+  border-radius:0 6px 6px 0;padding:18px 22px;margin:26px 0}
 .callout p:last-child{margin-bottom:0}
-.callout .lab{font-family:var(--mono);font-size:.64rem;letter-spacing:.16em;text-transform:uppercase;color:var(--accent);display:block;margin-bottom:9px}
-.callout.flag{border-left-color:var(--flag);background:var(--flag-soft)}
-.callout.flag .lab{color:var(--flag)}
+.callout .lab{font-family:var(--mono);font-size:.63rem;letter-spacing:.16em;text-transform:uppercase;color:var(--accent);display:block;margin-bottom:9px}
 
-/* ---- interactive blocks ---- */
-.demo{background:var(--card);border:1px solid var(--rule);border-radius:8px;padding:22px;margin:26px 0}
-.demo .dlab{font-family:var(--mono);font-size:.62rem;letter-spacing:.16em;text-transform:uppercase;
-  color:var(--accent);margin:0 0 14px;display:flex;align-items:center;gap:8px}
-.demo .dlab::after{content:"";flex:1;height:1px;background:var(--rule)}
-.quote{font-family:var(--serif);font-size:1.06rem;color:var(--ink);line-height:1.6;
-  background:var(--card-2);border-radius:6px;padding:16px 18px;margin:0 0 18px}
-.opts{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:16px}
-.opt{font-family:var(--sans);font-size:.85rem;padding:8px 13px;border-radius:6px;border:1px solid var(--rule);
-  background:transparent;color:var(--body);cursor:pointer;transition:.13s;text-align:left}
-.opt:hover{border-color:var(--accent);color:var(--ink)}
-.opt[aria-pressed="true"]{background:var(--accent-soft);border-color:var(--accent);color:var(--accent);font-weight:600}
-.opt:focus-visible,.btn:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
-.btn{font-family:var(--sans);font-size:.85rem;font-weight:600;padding:9px 16px;border-radius:6px;
-  border:1px solid var(--accent);background:var(--accent);color:var(--paper);cursor:pointer;transition:.13s}
-.btn:hover{opacity:.88}
-.btn[disabled]{opacity:.4;cursor:default}
-.btn.ghost{background:transparent;color:var(--accent)}
-.reveal{margin-top:16px;padding-top:16px;border-top:1px solid var(--rule);display:none}
-.reveal.on{display:block}
-.reveal p:last-child{margin-bottom:0}
-.dom{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:9px 0;border-bottom:1px solid var(--rule-soft);font-size:.9rem}
-.dom:last-child{border-bottom:0}
-.dom .nm{color:var(--ink)}
-.pill{font-family:var(--mono);font-size:.66rem;letter-spacing:.08em;text-transform:uppercase;
-  padding:3px 9px;border-radius:99px;white-space:nowrap;font-weight:600}
-.pill.neg{background:var(--neg-soft);color:var(--neg)}
-.pill.pos{background:var(--pos-soft);color:var(--pos)}
-.pill.na{background:var(--rule-soft);color:var(--faint)}
-.toggles{display:flex;flex-wrap:wrap;gap:10px;margin-bottom:16px}
-.tog{display:inline-flex;align-items:center;gap:8px;font-size:.88rem;color:var(--body);cursor:pointer;
-  border:1px solid var(--rule);border-radius:6px;padding:9px 13px;transition:.13s}
-.tog:hover{border-color:var(--accent)}
-.tog input{accent-color:var(--accent);width:16px;height:16px;cursor:pointer}
-.meter{margin-top:6px}
-.meter .track{height:34px;background:var(--card-2);border-radius:6px;overflow:hidden;position:relative}
-.meter .fill{height:100%;background:var(--neg);width:0;transition:width .45s cubic-bezier(.3,.8,.3,1)}
-.meter .val{position:absolute;top:0;left:0;right:0;height:100%;display:flex;align-items:center;
-  padding:0 13px;font-family:var(--mono);font-size:.88rem;font-weight:700;color:var(--ink);
-  font-variant-numeric:tabular-nums;mix-blend-mode:normal}
-.meter .cap{font-family:var(--mono);font-size:.68rem;color:var(--muted);margin-top:7px;display:block}
-.sent{padding:13px 0;border-bottom:1px solid var(--rule-soft)}
-.sent:last-of-type{border-bottom:0}
-.sent .txt{font-family:var(--serif);color:var(--ink);font-size:1rem;margin-bottom:9px}
-.sent .row{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
-.score{font-family:var(--mono);font-size:.95rem;color:var(--ink);font-weight:700;margin-top:16px;
-  padding-top:14px;border-top:1px solid var(--rule)}
-.score span{color:var(--accent)}
-.scroll{overflow-x:auto}
-table{width:100%;border-collapse:collapse;margin:20px 0;font-size:.92rem}
-th{text-align:left;font-family:var(--mono);font-size:.66rem;letter-spacing:.1em;text-transform:uppercase;
-  color:var(--muted);font-weight:600;padding:0 14px 9px 0;border-bottom:1px solid var(--rule);white-space:nowrap}
-td{padding:11px 14px 11px 0;border-bottom:1px solid var(--rule-soft);vertical-align:top}
-td.num{font-family:var(--mono);font-variant-numeric:tabular-nums;color:var(--ink);white-space:nowrap}
+/* figures */
+figure{margin:30px 0;padding:0}
+.fig{background:var(--card);border:1px solid var(--rule);border-radius:8px;padding:20px 22px}
+.fig h3{font-family:var(--sans);font-size:.97rem;color:var(--ink);margin:0 0 3px;font-weight:600}
+.fig .sub{font-size:.85rem;color:var(--muted);margin:0 0 18px}
+figcaption{font-size:.86rem;color:var(--muted);margin-top:12px;padding-top:11px;border-top:1px solid var(--rule-soft)}
+figcaption b{color:var(--ink);font-weight:600}
+svg{display:block;width:100%;height:auto;overflow:visible}
+.ax{font-family:var(--mono);font-size:9.5px;fill:var(--faint)}
+.lbl{font-family:var(--sans);font-size:12px;fill:var(--body)}
+.val{font-family:var(--mono);font-size:11.5px;fill:var(--ink);font-weight:600}
+.gridline{stroke:var(--grid);stroke-width:1}
+.bar{transition:width .8s cubic-bezier(.25,.8,.3,1),height .8s cubic-bezier(.25,.8,.3,1),y .8s cubic-bezier(.25,.8,.3,1)}
+@media (prefers-reduced-motion:reduce){.bar{transition:none}}
+.legend{display:flex;flex-wrap:wrap;gap:14px;margin-top:14px;font-size:.82rem;color:var(--muted)}
+.legend i{width:11px;height:11px;border-radius:2px;display:inline-block;margin-right:6px;vertical-align:-1px}
+
+/* domain map */
+.dmap{display:grid;gap:1px;background:var(--rule-soft);border:1px solid var(--rule);border-radius:6px;overflow:hidden}
+.drow{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:10px 14px;background:var(--card);font-size:.9rem}
+.drow.off{opacity:.5}
+.drow .nm{color:var(--ink)}
+.drow .why{color:var(--faint);font-size:.85em;display:block;font-family:var(--mono)}
+.chip{font-family:var(--mono);font-size:.64rem;letter-spacing:.07em;text-transform:uppercase;padding:3px 9px;border-radius:99px;white-space:nowrap;font-weight:700;border:1px solid}
+.chip.neg{color:var(--amber);border-color:var(--amber);background:transparent}
+.chip.pos{color:var(--blue);border-color:var(--blue);background:transparent}
+.chip.na{color:var(--faint);border-color:var(--rule);background:transparent}
+.quote{font-family:var(--serif);font-size:1.05rem;color:var(--ink);line-height:1.62;
+  background:var(--card-2);border-radius:6px;padding:16px 18px;margin:0 0 16px}
+
+/* stat strip */
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(128px,1fr));gap:1px;background:var(--rule-soft);
+  border:1px solid var(--rule);border-radius:8px;overflow:hidden;margin:26px 0}
+.stat{background:var(--card);padding:15px 16px}
+.stat b{display:block;font-family:var(--mono);font-size:1.3rem;color:var(--accent);font-variant-numeric:tabular-nums;letter-spacing:-.02em}
+.stat span{display:block;font-size:.75rem;color:var(--muted);margin-top:3px;line-height:1.4}
+.tip{position:fixed;pointer-events:none;background:var(--ink);color:var(--paper);font-family:var(--mono);
+  font-size:11.5px;padding:6px 9px;border-radius:5px;opacity:0;transition:opacity .12s;z-index:60;white-space:nowrap}
+.tip.on{opacity:1}
 ul{margin:0 0 16px;padding-left:22px;max-width:66ch}
 li{margin-bottom:9px}li::marker{color:var(--accent)}
-.refs{margin-top:52px;padding-top:22px;border-top:1px solid var(--rule);font-size:.85rem;color:var(--muted)}
-.refs h3{font-family:var(--mono);font-size:.68rem;letter-spacing:.16em;text-transform:uppercase;color:var(--faint);margin:0 0 12px;font-weight:600}
+.refs{margin-top:56px;padding-top:22px;border-top:1px solid var(--rule);font-size:.85rem;color:var(--muted)}
+.refs h3{font-family:var(--mono);font-size:.67rem;letter-spacing:.16em;text-transform:uppercase;color:var(--faint);margin:0 0 12px;font-weight:600}
 .refs p{margin-bottom:9px;max-width:none}
 a{color:var(--accent);text-underline-offset:2px}
+a:focus-visible{outline:2px solid var(--accent);outline-offset:2px;border-radius:2px}
 .foot{margin-top:34px;padding-top:20px;border-top:1px solid var(--rule);font-size:.9rem;color:var(--muted)}
-@media (prefers-reduced-motion:reduce){*{transition:none!important}}
-@media (max-width:620px){.sheet{padding:36px 18px 70px}body{font-size:16px}.demo{padding:18px}}
+@media (max-width:620px){.sheet{padding:38px 17px 70px}body{font-size:16px}.fig{padding:16px}}
 </style>
 </head>
 <body>
+<div id="prog"></div>
+<div class="tip" id="tip"></div>
 <article class="sheet">
 
 <p class="eyebrow">Technical note</p>
 <h1>Reading between the lines</h1>
-<p class="standfirst">Measuring patient experience from unsolicited feedback — and what happened when I
-tried to break my own sentiment model.</p>
+<p class="standfirst">Measuring patient experience from unsolicited feedback — where a sentiment model's
+errors actually go, and what happened when I tested one of my own assumptions.</p>
 
 <div class="byline">
   <span><b>Kaycee Ndukuba</b></span>
   <span>MSc Applied Data Science · BSc Psychology</span>
-  <span>Three interactive exercises · 5 min</span>
+  <span>6 min read</span>
 </div>
 
-<p>Turning unsolicited patient comments into a comparable score is, in the language of my first degree, a
-<strong>construct validation</strong> problem: the claim that something cheap and instantaneous tracks
-something expensive and slow. That is the same argument psychometrics has been having for a century, and
-it is why I think about text models the way I do.</p>
+<p class="lede">Turning unsolicited patient comments into a comparable score is, in the language of my
+first degree, a <strong>construct validation</strong> problem: the claim that something cheap and
+instantaneous tracks something expensive and slow. That is the argument psychometrics has been having for
+a century, and it is why I think about text models the way I do.</p>
 
-<p>Three notes on that problem. Each one has a short exercise, because these points are easier to
-experience than to be told. Every model figure below is real and reproducible.</p>
+<p>What follows is four observations about that problem. The evidence is drawn from a sentiment
+classifier I trained on <strong>14,640 real airline customer messages</strong> — the closest public
+analogue I have to unsolicited service feedback — and deployed to AWS Lambda. Every figure below is real
+output from that model and reproducible from source.</p>
+
+<div class="stats">
+  <div class="stat"><b>14,640</b><span>real customer messages</span></div>
+  <div class="stat"><b>0.721</b><span>macro F1, held out</span></div>
+  <div class="stat"><b>79.3%</b><span>accuracy, held out</span></div>
+  <div class="stat"><b>2 of 5</b><span>sarcasm cases caught</span></div>
+</div>
 
 <h2><span class="n">01</span>One comment is not one score</h2>
 
-<p>A single comment routinely touches several domains at once — and, more awkwardly, can be
+<p>A single comment routinely speaks to several domains at once — and, more awkwardly, can be
 <strong>positive about one and negative about another in the same breath</strong>.</p>
 
-<div class="demo">
-  <p class="dlab">Exercise 1 · Tag the domains</p>
-  <p class="quote">"Arrived at 7am for a 9am appointment and wasn't seen until half one. Nobody told us
-  what was happening or how long it would be. The nurse who finally took my bloods was lovely — she
-  explained everything properly and couldn't have been kinder."</p>
-  <p style="font-size:.9rem;color:var(--muted);margin-bottom:12px">Which domains does this comment speak to? Tick all that apply.</p>
-  <div class="opts" id="domOpts"></div>
-  <button class="btn" id="domBtn">Show the answer</button>
-  <div class="reveal" id="domRev">
-    <div id="domList"></div>
-    <p style="margin-top:16px"><strong>This comment is four labels, with two different polarities.</strong>
-    A single overall sentiment score averages it to roughly neutral and destroys everything actionable in it:
-    the access failure and the communication failure both disappear, and so does the fact that the clinical
-    interaction was genuinely good.</p>
-    <p>That is why domain assignment has to be a set of binary relevance decisions rather than one
-    seven-way choice, with sentiment scored <em>per domain</em>. It also means evaluation has to be
-    per-domain — a headline average lets a frequent domain quietly carry a rare one.</p>
+<p class="quote">"Arrived at 7am for a 9am appointment and wasn't seen until half one. Nobody told us what
+was happening or how long it would be. The nurse who finally took my bloods was lovely — she explained
+everything properly and couldn't have been kinder."</p>
+
+<figure>
+  <div class="fig">
+    <h3>The same comment, resolved per domain</h3>
+    <p class="sub">Four labels, two polarities, one comment</p>
+    <div class="dmap">
+      <div class="drow"><span class="nm">Fast access<span class="why">7am appointment, seen at 13:30</span></span><span class="chip neg">Negative</span></div>
+      <div class="drow"><span class="nm">Communication<span class="why">"nobody told us what was happening"</span></span><span class="chip neg">Negative</span></div>
+      <div class="drow"><span class="nm">Emotional support<span class="why">"couldn't have been kinder"</span></span><span class="chip pos">Positive</span></div>
+      <div class="drow"><span class="nm">Effective treatment<span class="why">"explained everything properly"</span></span><span class="chip pos">Positive</span></div>
+      <div class="drow off"><span class="nm">Continuity of care</span><span class="chip na">Not raised</span></div>
+      <div class="drow off"><span class="nm">Physical &amp; environmental needs</span><span class="chip na">Not raised</span></div>
+      <div class="drow off"><span class="nm">Billing &amp; administration</span><span class="chip na">Not raised</span></div>
+    </div>
   </div>
-</div>
+  <figcaption><b>A single overall sentiment score averages this to roughly neutral</b> and destroys
+  everything actionable in it. The access failure and the communication failure both vanish — and so does
+  the fact that the clinical interaction was genuinely good.</figcaption>
+</figure>
 
-<p>The 1–5 score compounds this. It is <strong>ordinal</strong> — the gap between 1 and 5 is not the same
-as the gap between 4 and 5 — so standard classification is blind to the ordering and penalises a
-near-miss exactly as hard as a total miss. An ordinal formulation evaluated with quadratic weighted kappa
-or mean absolute error respects that difference.</p>
+<p>So domain assignment is a set of binary relevance decisions rather than one seven-way choice, with
+sentiment scored <em>per domain</em>. Evaluation has to follow: a headline average lets a frequent domain
+quietly carry a rare one.</p>
 
-<h2><span class="n">02</span>What happened when I tested my own assumption</h2>
+<p>The 1–5 score compounds this, because it is <strong>ordinal</strong>. The gap between 1 and 5 is not
+the gap between 4 and 5, but standard classification is blind to that and penalises a near-miss exactly as
+hard as a total miss. An ordinal formulation evaluated with quadratic weighted kappa or mean absolute
+error respects the difference.</p>
 
-<p>I built a three-class sentiment classifier on <strong>14,640 real airline customer messages</strong> —
-the closest public analogue I have to unsolicited service feedback. It reaches 79.3% accuracy and
-<strong>0.721 macro F1</strong> on a held-out split. I report macro F1 rather than accuracy because the
-data skews heavily negative, as every complaints channel does, and accuracy would flatter a model that
-simply guessed the majority class.</p>
+<h2><span class="n">02</span>The headline metric hides the weakest class</h2>
+
+<p>Feedback channels are lopsided. Mine is 63% negative, which is entirely normal — people write when
+something went wrong.</p>
+
+<figure>
+  <div class="fig">
+    <h3>Class balance across 14,640 messages</h3>
+    <p class="sub">Negative dominates, as it does in any complaints channel</p>
+    <svg id="c-balance" viewBox="0 0 640 132" role="img" aria-label="Class balance: negative 9,178; neutral 3,099; positive 2,363"></svg>
+  </div>
+  <figcaption>A model that simply guessed "negative" every time would score <b>63% accuracy</b> while
+  being useless. That is why accuracy is the wrong headline here.</figcaption>
+</figure>
+
+<figure>
+  <div class="fig">
+    <h3>F1 by class, against the macro average</h3>
+    <p class="sub">The average conceals a 0.29 spread</p>
+    <svg id="c-f1" viewBox="0 0 640 176" role="img" aria-label="F1 by class: negative 0.875, positive 0.703, neutral 0.584. Macro average 0.721"></svg>
+  </div>
+  <figcaption>Macro F1 weights each class equally, so the weak class cannot hide. <b>Neutral scores 0.584
+  against negative's 0.875</b> — and neutral is precisely where ambiguous, understated feedback lands.</figcaption>
+</figure>
+
+<h2><span class="n">03</span>Where the errors actually go</h2>
+
+<p>A single number tells you how much is wrong. The confusion structure tells you <em>what</em> is wrong,
+which is the part you can act on.</p>
+
+<figure>
+  <div class="fig">
+    <h3>Confusion matrix, held-out set (n = 1,464)</h3>
+    <p class="sub">Rows are the true label, columns the prediction</p>
+    <svg id="c-cm" viewBox="0 0 640 236" role="img" aria-label="Confusion matrix showing 118 neutral messages misclassified as negative"></svg>
+  </div>
+  <figcaption><b>118 of 310 genuinely neutral messages are predicted negative</b> — the single largest
+  error in the model, and a directional one. Applied to patient feedback, that specific failure would
+  inflate an organisation's apparent complaint volume and send people chasing problems that were never
+  raised.</figcaption>
+</figure>
+
+<h2><span class="n">04</span>I tested one of my own claims and it was wrong</h2>
 
 <p>The pipeline extracts structural features from the raw text before cleaning — capitalisation,
 exclamation and question marks, emoji. I had written that these gave the model purchase on <em>tone</em>,
-and therefore on sarcasm. Then it occurred to me I had asserted that without ever testing it.</p>
+and therefore on sarcasm. Then it occurred to me that I had asserted it without ever testing it.</p>
 
-<div class="demo">
-  <p class="dlab">Exercise 2 · The ablation</p>
-  <p style="font-size:.9rem;color:var(--muted);margin-bottom:14px">Same sentence, tone markers switched on
-  and off. If my claim were right, removing them should make the model <em>less</em> sure it's negative.</p>
-  <p class="quote" id="ablQuote"></p>
-  <div class="toggles">
-    <label class="tog"><input type="checkbox" id="tCaps" checked> Capitalisation</label>
-    <label class="tog"><input type="checkbox" id="tBang" checked> Exclamation marks</label>
-  </div>
-  <div class="meter">
-    <div class="track"><div class="fill" id="ablFill"></div><div class="val" id="ablVal"></div></div>
-    <span class="cap">P(negative) — real output from the deployed model</span>
-  </div>
-  <div class="reveal on" style="border-top:0;padding-top:14px">
-    <p id="ablNote" style="font-size:.92rem"></p>
-  </div>
-</div>
+<p>So I ran an ablation: take one sarcastic sentence, strip the tone markers, and watch what happens. If
+the claim held, confidence should <em>fall</em>.</p>
 
-<p>The prediction moves the <strong>wrong way</strong>. Stripping the tone markers made the model
-<em>more</em> confident, not less. The structural features were not carrying that example — the words
-were, and they did a cleaner job without the markers muddying them. My claim was wrong.</p>
+<figure>
+  <div class="fig">
+    <h3>Ablation — P(negative) as tone markers are removed</h3>
+    <p class="sub">"Great. Only waited FOUR HOURS at the gate with no information. Wonderful!!"</p>
+    <svg id="c-abl" viewBox="0 0 640 196" role="img" aria-label="Ablation: confidence rises from 0.715 to 0.801 as tone markers are removed"></svg>
+  </div>
+  <figcaption>It moves the <b>wrong way</b>. Removing capitalisation and exclamation marks made the model
+  <em>more</em> confident, not less. The tone features were not carrying this example — the words were, and
+  they read more cleanly without the markers. The claim was wrong.</figcaption>
+</figure>
 
 <p>So I pushed harder, with sentences whose surface wording is uniformly positive and only the intent is
 negative.</p>
 
-<div class="demo">
-  <p class="dlab">Exercise 3 · Can you beat the model?</p>
-  <p style="font-size:.9rem;color:var(--muted);margin-bottom:6px">Five sarcastic sentences. Mark each one
-  as a human would read it, then see what the model said.</p>
-  <div id="sarcList"></div>
-  <button class="btn" id="sarcBtn" disabled>Reveal the model's answers</button>
-  <div class="reveal" id="sarcRev">
-    <p class="score" id="sarcScore"></p>
-    <p style="margin-top:14px">Both successes contain negative lexical content that leaks through —
-    <em>worst enemy</em>, <em>losing my luggage</em>. The three failures are uniformly positive on the
-    surface. On the last one the model is <strong>99% confident and completely wrong</strong>.</p>
+<figure>
+  <div class="fig">
+    <h3>Five sarcastic sentences, all of which a person reads as negative</h3>
+    <p class="sub">Bars show P(negative); the model needs to clear 0.5 to be right</p>
+    <svg id="c-sarc" viewBox="0 0 640 250" role="img" aria-label="Sarcasm probe: the model correctly identifies 2 of 5 sarcastic sentences"></svg>
+    <div class="legend">
+      <span><i style="background:var(--blue)"></i>Correct — read as negative</span>
+      <span><i style="background:var(--amber)"></i>Missed — read as positive</span>
+    </div>
   </div>
-</div>
+  <figcaption><b>Two of five.</b> Both successes contain negative words that leak through — <em>worst
+  enemy</em>, <em>losing my luggage</em>. The three failures are uniformly positive on the surface. On the
+  last, the model is 99% confident and completely wrong.</figcaption>
+</figure>
 
 <div class="callout">
   <span class="lab">Why this happens</span>
   <p>Bag-of-words has no mechanism for <strong>incongruity</strong>. Sarcasm is a contradiction between a
   positive expression and a negative situation, and a representation that treats a sentence as an unordered
   collection of tokens has nothing that can be in tension with anything else. Counting exclamation marks
-  does not fix it, because the marker is not the meaning. The remedy is a contextual encoder, where
+  does not repair that, because the marker is not the meaning. The remedy is a contextual encoder, where
   <em>love</em> and <em>stuck on the tarmac</em> can inform one another.</p>
 </div>
 
-<div class="callout flag">
-  <span class="lab">The failure that matters more</span>
-  <p>Note that an abstention threshold would not have caught the worst case. The model was 99% confident
-  and wrong, so a confidence cut-off never fires. That is a <strong>calibration</strong> failure, distinct
-  from an accuracy failure — and where a score may trigger an intervention, it is the more consequential of
-  the two. Reliability curves and expected calibration error belong next to the headline metric, not after it.</p>
+<h2><span class="n">05</span>Well calibrated, and still catastrophically wrong</h2>
+
+<p>The obvious response to the above is an abstention threshold — route anything the model is unsure about
+to a human. So I checked whether the model's confidence means anything.</p>
+
+<figure>
+  <div class="fig">
+    <h3>Reliability curve — does confidence predict correctness?</h3>
+    <p class="sub">Held-out set, binned by the model's own confidence</p>
+    <svg id="c-cal" viewBox="0 0 640 300" role="img" aria-label="Reliability curve tracking close to perfect calibration"></svg>
+    <div class="legend">
+      <span><i style="background:var(--accent)"></i>Observed accuracy</span>
+      <span><i style="background:var(--faint)"></i>Perfect calibration</span>
+    </div>
+  </div>
+  <figcaption>It tracks the diagonal closely. When this model says 90–100%, it is right <b>94.7%</b> of the
+  time. In aggregate, its confidence is honest.</figcaption>
+</figure>
+
+<div class="callout">
+  <span class="lab">The finding that matters</span>
+  <p>And yet it was <strong>99% confident and wrong</strong> on "thanks for the amazing 5 hour delay". Both
+  things are true at once, and the tension between them is the point: <strong>aggregate calibration is not
+  a safety guarantee.</strong> It is measured on data drawn from the same distribution as training, so it
+  says nothing about the input that does not resemble it. An abstention threshold tuned on that curve would
+  never have fired on the sentence that mattered most.</p>
+  <p>Which is why, for any score that triggers an intervention, I would want calibration reported
+  alongside accuracy <em>and</em> a deliberate adversarial set — not because it improves the headline
+  number, but because it is the only thing that finds this class of failure.</p>
 </div>
 
-<h2><span class="n">03</span>The label ceiling, and who bothers to write</h2>
+<h2><span class="n">06</span>The label ceiling, and who bothers to write</h2>
 
 <p>A model trained on expertly annotated comments inherits whatever agreement those annotators had. If two
-trained humans reading the same sentence disagree on whether it reflects emotional support, no amount of
+trained people reading the same sentence disagree on whether it reflects emotional support, no amount of
 modelling recovers a ground truth that was never there. <strong>Inter-annotator agreement is a ceiling on
 achievable performance</strong>, not a footnote — Cohen's kappa for two raters, Krippendorff's alpha where
 coverage is uneven.</p>
 
-<p>The useful part is diagnostic: the domains where annotators disagree most are the domains where the
+<p>The useful part is diagnostic. The domains where annotators disagree most are the domains where the
 construct is least well defined, which tells you where the <em>definition</em> needs work before the model
 does. My untested prior is that emotional support is hardest of the seven, because it depends most on
 inference about what a patient meant rather than what they said.</p>
 
 <p>Separately, unsolicited feedback over-represents the extremes and skews by age, digital access and
-condition type — and often the patients whose experience matters most are least likely to post. Validation
-against an established survey is the substantive answer to that. The question I would want to understand is
-where it holds and where it thins: how alignment behaves in low-volume subgroups, and whether
-location-level scores carry uncertainty alongside them. A score built on nine comments and one built on
-nine hundred should not look identical on a dashboard, because a hospital will act on both as if they were.</p>
+condition type — and often the patients whose experience matters most are least likely to post.
+Validation against an established survey is the substantive answer to that. What I would want to
+understand is where it holds and where it thins: how alignment behaves in low-volume subgroups, and
+whether location-level scores carry uncertainty alongside them. A score built on nine comments and one
+built on nine hundred should not look identical on a dashboard, because a hospital will act on both as
+though they were.</p>
 
-<h2><span class="n">04</span>What I would look at first</h2>
+<h2><span class="n">07</span>What I would look at first</h2>
 <ul>
   <li><strong>The annotation guidelines and the agreement statistics</strong>, before touching a model. You
   cannot improve a measurement whose definition you have not read.</li>
-  <li><strong>Where the residual error concentrates per domain</strong> — and whether one domain is simply
-  harder than the rest.</li>
-  <li><strong>Calibration, not only accuracy</strong>, for any score that drives an intervention.</li>
+  <li><strong>The confusion structure per domain</strong> — not the headline accuracy, but which specific
+  confusions dominate, and whether they are directional in a way that would mislead a client.</li>
+  <li><strong>Calibration and an adversarial set</strong> for any score that drives an intervention.</li>
   <li><strong>A client conversation, early.</strong> I don't think the write-up can be written well by
   someone who has never heard the question being asked.</li>
 </ul>
 
 <div class="refs">
-  <h3>Notes on sources</h3>
-  <p>The patient comment in Exercise 1 is an illustrative composite written for this note, not a real
-  review. Domain names follow the seven-domain framing used in published patient-experience measurement.</p>
-  <p>All model figures are real output from a classifier I trained on the Twitter US Airline Sentiment
-  dataset (14,640 messages) and are reproducible from source:
-  <span style="font-family:var(--mono);font-size:.85em">python -m src.train_export</span> and
+  <h3>Notes on sources and method</h3>
+  <p>The patient comment in §1 is an illustrative composite written for this note, not a real review. The
+  seven domain names follow the framing used in published patient-experience measurement.</p>
+  <p>All model figures are real output from a three-class sentiment classifier trained on the Twitter US
+  Airline Sentiment dataset (14,640 messages; stratified 10% held-out split) and are reproducible from
+  source: <span style="font-family:var(--mono);font-size:.85em">python -m src.train_export</span> and
   <span style="font-family:var(--mono);font-size:.85em">python -m src.sarcasm_probe</span>. The model is
   deployed to AWS Lambda as a container image with CloudWatch monitoring.</p>
-  <p>Gerlach, M., Farb, B., Revelle, W., &amp; Nunes Amaral, L. A. (2018). "A robust data-driven approach to
-  identifying types of personality." <em>Nature Human Behaviour</em> — referenced in my related work on
-  603,322 IPIP-FFM responses.</p>
+  <p>Charts are hand-built SVG with no plotting library. The two-colour encoding was validated for
+  protanopia, deuteranopia and tritanopia rather than chosen by eye, and every categorical distinction is
+  carried by a text label as well as by colour.</p>
 </div>
 
 <p class="foot">Code and write-ups: <a href="https://github.com/kndukuba17-hub">github.com/kndukuba17-hub</a>
@@ -286,108 +344,207 @@ nine hundred should not look identical on a dashboard, because a hospital will a
 </article>
 
 <script>
-/* ---------- Exercise 1: domain tagging ---------- */
-var DOMAINS=[
- {n:"Fast access",v:"neg",why:"7am appointment seen at 1:30pm"},
- {n:"Communication",v:"neg",why:"“nobody told us what was happening”"},
- {n:"Emotional support",v:"pos",why:"“couldn't have been kinder”"},
- {n:"Effective treatment",v:"pos",why:"bloods taken, explained properly"},
- {n:"Continuity of care",v:"na",why:"not mentioned"},
- {n:"Physical & environmental needs",v:"na",why:"not mentioned"},
- {n:"Billing & administration",v:"na",why:"not mentioned"}
-];
-var picked={};
-var optBox=document.getElementById("domOpts");
-DOMAINS.forEach(function(d,i){
-  var b=document.createElement("button");
-  b.className="opt";b.type="button";b.textContent=d.n;b.setAttribute("aria-pressed","false");
-  b.onclick=function(){picked[i]=!picked[i];b.setAttribute("aria-pressed",picked[i]?"true":"false");};
-  optBox.appendChild(b);
-});
-document.getElementById("domBtn").onclick=function(){
-  var list=document.getElementById("domList");
-  list.innerHTML=DOMAINS.map(function(d){
-    var cls=d.v==="neg"?"neg":d.v==="pos"?"pos":"na";
-    var txt=d.v==="neg"?"Negative":d.v==="pos"?"Positive":"Not raised";
-    return '<div class="dom"><span class="nm">'+d.n+
-      ' <span style="color:var(--faint);font-size:.85em">— '+d.why+'</span></span>'+
-      '<span class="pill '+cls+'">'+txt+'</span></div>';
-  }).join("");
-  document.getElementById("domRev").classList.add("on");
-  this.disabled=true;this.textContent="Answer shown";
-};
-
-/* ---------- Exercise 2: ablation (real measured values) ---------- */
-var ABL={
- "1,1":{p:0.715,t:"Great. Only waited FOUR HOURS at the gate with no information. Wonderful!!"},
- "1,0":{p:0.769,t:"Great. Only waited FOUR HOURS at the gate with no information. Wonderful"},
- "0,1":{p:0.752,t:"great. only waited four hours at the gate with no information. wonderful!!"},
- "0,0":{p:0.801,t:"great. only waited four hours at the gate with no information. wonderful"}
-};
-function abl(){
-  var c=document.getElementById("tCaps").checked?1:0;
-  var b=document.getElementById("tBang").checked?1:0;
-  var d=ABL[c+","+b];
-  document.getElementById("ablQuote").textContent="“"+d.t+"”";
-  document.getElementById("ablFill").style.width=(d.p*100).toFixed(1)+"%";
-  document.getElementById("ablVal").textContent="P(negative) = "+d.p.toFixed(3);
-  var note=document.getElementById("ablNote");
-  if(c===0&&b===0){
-    note.innerHTML="<strong>Both markers removed — and the model is at its most certain (0.801).</strong> "+
-      "The opposite of what I predicted. The tone features were not carrying this example at all.";
-  }else if(c===1&&b===1){
-    note.innerHTML="The original sentence, with every tone marker present: <strong>0.715</strong> — "+
-      "the <em>lowest</em> confidence of the four variants. Try switching them off.";
-  }else{
-    note.innerHTML="Removing one marker already raises confidence. Switch off both to see the full effect.";
-  }
+(function(){
+"use strict";
+var reduce=matchMedia("(prefers-reduced-motion: reduce)").matches;
+var css=function(n){return getComputedStyle(document.documentElement).getPropertyValue(n).trim();};
+var tip=document.getElementById("tip");
+function showTip(e,t){tip.textContent=t;tip.classList.add("on");
+  tip.style.left=Math.min(e.clientX+12,innerWidth-tip.offsetWidth-8)+"px";
+  tip.style.top=(e.clientY-34)+"px";}
+function hideTip(){tip.classList.remove("on");}
+function el(n,a){var e=document.createElementNS("http://www.w3.org/2000/svg",n);
+  for(var k in a)e.setAttribute(k,a[k]);return e;}
+function hoverable(node,text){
+  node.addEventListener("mousemove",function(e){showTip(e,text);});
+  node.addEventListener("mouseleave",hideTip);
+  node.style.cursor="default";
 }
-document.getElementById("tCaps").onchange=abl;
-document.getElementById("tBang").onchange=abl;
-abl();
 
-/* ---------- Exercise 3: sarcasm gauntlet (real model output) ---------- */
-var SARC=[
- {t:"Absolutely brilliant service. Ten out of ten. Would recommend to my worst enemy.",pred:"negative",p:0.94},
- {t:"Fantastic job losing my luggage again, really appreciate it.",pred:"negative",p:0.71},
- {t:"Wonderful. Just wonderful.",pred:"positive",p:0.08},
- {t:"Love being stuck on the tarmac. Best part of my day.",pred:"positive",p:0.07},
- {t:"Thanks for the amazing 5 hour delay, you guys are the best.",pred:"positive",p:0.01}
-];
-var guesses={};
-var sBox=document.getElementById("sarcList");
-SARC.forEach(function(s,i){
-  var d=document.createElement("div");d.className="sent";
-  d.innerHTML='<div class="txt">“'+s.t+'”</div><div class="row" data-i="'+i+'">'+
-    '<button class="opt" type="button" data-v="negative" aria-pressed="false">Negative</button>'+
-    '<button class="opt" type="button" data-v="positive" aria-pressed="false">Positive</button>'+
-    '<span class="pill na" style="display:none"></span></div>';
-  sBox.appendChild(d);
-});
-sBox.addEventListener("click",function(e){
-  var b=e.target.closest("button.opt"); if(!b) return;
-  var row=b.parentNode, i=row.dataset.i;
-  [].forEach.call(row.querySelectorAll("button.opt"),function(x){x.setAttribute("aria-pressed","false");});
-  b.setAttribute("aria-pressed","true"); guesses[i]=b.dataset.v;
-  document.getElementById("sarcBtn").disabled = Object.keys(guesses).length<5;
-});
-document.getElementById("sarcBtn").onclick=function(){
-  var you=0, model=0;
-  [].forEach.call(sBox.querySelectorAll(".row"),function(row){
-    var i=row.dataset.i, s=SARC[i];
-    if(guesses[i]==="negative") you++;
-    if(s.pred==="negative") model++;
-    var pill=row.querySelector(".pill");
-    pill.style.display="inline-block";
-    pill.className="pill "+(s.pred==="negative"?"pos":"neg");
-    pill.textContent="Model: "+s.pred+" ("+s.p.toFixed(2)+")";
-    [].forEach.call(row.querySelectorAll("button.opt"),function(x){x.disabled=true;});
+/* ---------- progress bar ---------- */
+var prog=document.getElementById("prog");
+addEventListener("scroll",function(){
+  var h=document.documentElement.scrollHeight-innerHeight;
+  prog.style.width=(h>0?(scrollY/h)*100:0)+"%";
+},{passive:true});
+
+/* ---------- reveal on scroll ---------- */
+var pending=[];
+function onView(svg,draw){
+  if(reduce){draw();return;}
+  var io=new IntersectionObserver(function(es){
+    es.forEach(function(en){ if(en.isIntersecting){ draw(); io.disconnect(); } });
+  },{threshold:.25});
+  io.observe(svg);
+}
+
+/* ---------- 1. class balance : single series, one hue ---------- */
+(function(){
+  var svg=document.getElementById("c-balance");
+  var data=[{k:"Negative",v:9178},{k:"Neutral",v:3099},{k:"Positive",v:2363}];
+  var total=14640, x0=92, w=392, y=20, bh=26, gap=12;
+  data.forEach(function(d,i){
+    var yy=y+i*(bh+gap);
+    svg.appendChild(el("text",{x:x0-12,y:yy+bh/2+4,"text-anchor":"end","class":"lbl"})).textContent=d.k;
+    svg.appendChild(el("rect",{x:x0,y:yy,width:w,height:bh,rx:4,fill:css("--card-2")}));
+    var bar=el("rect",{x:x0,y:yy,width:0,height:bh,rx:4,fill:css("--accent"),"class":"bar"});
+    svg.appendChild(bar); d._bar=bar; d._w=w*d.v/total;
+    var t=el("text",{x:x0+w+10,y:yy+bh/2+4,"class":"val"});
+    t.textContent=d.v.toLocaleString()+"  ("+Math.round(d.v/total*100)+"%)";
+    svg.appendChild(t);
+    hoverable(bar,d.k+": "+d.v.toLocaleString()+" of 14,640");
   });
-  document.getElementById("sarcScore").innerHTML=
-    "You read "+you+" of 5 as negative. <span>The model caught "+model+" of 5.</span>";
-  document.getElementById("sarcRev").classList.add("on");
-  this.disabled=true;this.textContent="Answers shown";
-};
+  onView(svg,function(){data.forEach(function(d){d._bar.setAttribute("width",d._w);});});
+})();
+
+/* ---------- 2. per-class F1 with macro reference ---------- */
+(function(){
+  var svg=document.getElementById("c-f1");
+  var data=[{k:"Negative",v:.875},{k:"Positive",v:.703},{k:"Neutral",v:.584}];
+  var x0=92,w=440,y=26,bh=28,gap=14,macro=.721;
+  [0,.25,.5,.75,1].forEach(function(t){
+    var x=x0+w*t;
+    svg.appendChild(el("line",{x1:x,y1:y-8,x2:x,y2:y+3*(bh+gap)-gap+6,"class":"gridline"}));
+    svg.appendChild(el("text",{x:x,y:y+3*(bh+gap)-gap+20,"text-anchor":"middle","class":"ax"})).textContent=t.toFixed(2);
+  });
+  data.forEach(function(d,i){
+    var yy=y+i*(bh+gap);
+    svg.appendChild(el("text",{x:x0-12,y:yy+bh/2+4,"text-anchor":"end","class":"lbl"})).textContent=d.k;
+    var bar=el("rect",{x:x0,y:yy,width:0,height:bh,rx:4,fill:css("--accent"),"class":"bar"});
+    svg.appendChild(bar); d._bar=bar; d._w=w*d.v;
+    var t=el("text",{x:x0+w*d.v+10,y:yy+bh/2+4,"class":"val"});t.textContent=d.v.toFixed(3);
+    svg.appendChild(t);
+    hoverable(bar,d.k+" — F1 "+d.v.toFixed(3));
+  });
+  var mx=x0+w*macro;
+  svg.appendChild(el("line",{x1:mx,y1:y-14,x2:mx,y2:y+3*(bh+gap)-gap+4,
+    stroke:css("--ink"),"stroke-width":1.5,"stroke-dasharray":"4 3"}));
+  svg.appendChild(el("text",{x:mx,y:y-20,"text-anchor":"middle","class":"ax",
+    fill:css("--ink")})).textContent="macro F1  0.721";
+  onView(svg,function(){data.forEach(function(d){d._bar.setAttribute("width",d._w);});});
+})();
+
+/* ---------- 3. confusion matrix : sequential single hue ---------- */
+(function(){
+  var svg=document.getElementById("c-cm");
+  var labels=["Negative","Neutral","Positive"];
+  var cm=[[841,54,23],[118,165,27],[45,36,155]];
+  var x0=104,y0=44,cw=132,ch=50,max=841;
+  labels.forEach(function(l,j){
+    svg.appendChild(el("text",{x:x0+j*cw+cw/2,y:y0-12,"text-anchor":"middle","class":"ax"})).textContent="pred "+l.toLowerCase();
+  });
+  labels.forEach(function(l,i){
+    svg.appendChild(el("text",{x:x0-12,y:y0+i*ch+ch/2+4,"text-anchor":"end","class":"lbl"})).textContent=l;
+    cm[i].forEach(function(v,j){
+      var t=v/max, op=.10+.85*Math.pow(t,.55);
+      var g=el("g");
+      g.appendChild(el("rect",{x:x0+j*cw+1,y:y0+i*ch+1,width:cw-2,height:ch-2,rx:4,
+        fill:css("--accent"),"fill-opacity":op.toFixed(3)}));
+      var txt=el("text",{x:x0+j*cw+cw/2,y:y0+i*ch+ch/2+4,"text-anchor":"middle","class":"val",
+        fill:(t>.45?css("--paper"):css("--ink"))});
+      txt.textContent=v; g.appendChild(txt);
+      if(i===1&&j===0) g.appendChild(el("rect",{x:x0+j*cw+1,y:y0+i*ch+1,width:cw-2,height:ch-2,rx:4,
+        fill:"none",stroke:css("--amber"),"stroke-width":2}));
+      svg.appendChild(g);
+      hoverable(g,v+" — true "+labels[i].toLowerCase()+", predicted "+labels[j].toLowerCase());
+    });
+  });
+  svg.appendChild(el("text",{x:x0,y:y0+3*ch+26,"class":"ax",fill:css("--amber")}))
+     .textContent="118 neutral messages predicted negative — the largest single error";
+})();
+
+/* ---------- 4. ablation ---------- */
+(function(){
+  var svg=document.getElementById("c-abl");
+  var data=[
+    {k:"Both markers present",v:.715},
+    {k:"Exclamation marks only",v:.752},
+    {k:"Capitalisation only",v:.769},
+    {k:"Both removed",v:.801}];
+  var x0=176,w=340,y=22,bh=26,gap=12;
+  data.forEach(function(d,i){
+    var yy=y+i*(bh+gap);
+    svg.appendChild(el("text",{x:x0-12,y:yy+bh/2+4,"text-anchor":"end","class":"lbl"})).textContent=d.k;
+    svg.appendChild(el("rect",{x:x0,y:yy,width:w,height:bh,rx:4,fill:css("--card-2")}));
+    var bar=el("rect",{x:x0,y:yy,width:0,height:bh,rx:4,
+      fill:(i===3?css("--amber"):css("--accent")),"class":"bar"});
+    svg.appendChild(bar); d._bar=bar; d._w=w*d.v;
+    var t=el("text",{x:x0+w+10,y:yy+bh/2+4,"class":"val"});t.textContent=d.v.toFixed(3);
+    svg.appendChild(t);
+    hoverable(bar,d.k+" — P(negative) "+d.v.toFixed(3));
+  });
+  svg.appendChild(el("text",{x:14,y:y+4*(bh+gap)+8,"class":"ax"}))
+     .textContent="confidence RISES as the tone markers are stripped — the opposite of the prediction";
+  onView(svg,function(){data.forEach(function(d){d._bar.setAttribute("width",d._w);});});
+})();
+
+/* ---------- 5. sarcasm probe ---------- */
+(function(){
+  var svg=document.getElementById("c-sarc");
+  var data=[
+   {t:"Absolutely brilliant service… would recommend to my worst enemy.",v:.94,ok:1},
+   {t:"Fantastic job losing my luggage again, really appreciate it.",v:.71,ok:1},
+   {t:"Wonderful. Just wonderful.",v:.08,ok:0},
+   {t:"Love being stuck on the tarmac. Best part of my day.",v:.07,ok:0},
+   {t:"Thanks for the amazing 5 hour delay, you guys are the best.",v:.01,ok:0}];
+  var x0=310,w=210,y=24,bh=26,gap=14;
+  var thr=x0+w*.5;
+  svg.appendChild(el("line",{x1:thr,y1:y-12,x2:thr,y2:y+5*(bh+gap)-gap+4,
+    stroke:css("--faint"),"stroke-width":1.5,"stroke-dasharray":"4 3"}));
+  svg.appendChild(el("text",{x:thr,y:y-18,"text-anchor":"middle","class":"ax"})).textContent="0.5 decision boundary";
+  data.forEach(function(d,i){
+    var yy=y+i*(bh+gap), col=d.ok?css("--blue"):css("--amber");
+    var lab=el("text",{x:x0-14,y:yy+bh/2+4,"text-anchor":"end","class":"lbl"});
+    lab.textContent=(d.t.length>44?d.t.slice(0,43)+"…":d.t);
+    svg.appendChild(lab);
+    svg.appendChild(el("rect",{x:x0,y:yy,width:w,height:bh,rx:4,fill:css("--card-2")}));
+    var bar=el("rect",{x:x0,y:yy,width:0,height:bh,rx:4,fill:col,"class":"bar"});
+    svg.appendChild(bar); d._bar=bar; d._w=Math.max(w*d.v,3);
+    var t=el("text",{x:x0+w+10,y:yy+bh/2+4,"class":"val",fill:col});
+    t.textContent=(d.ok?"✓ ":"✗ ")+d.v.toFixed(2);
+    svg.appendChild(t);
+    hoverable(bar,(d.ok?"Correct":"Missed")+" — P(negative) "+d.v.toFixed(2));
+  });
+  onView(svg,function(){data.forEach(function(d){d._bar.setAttribute("width",d._w);});});
+})();
+
+/* ---------- 6. reliability curve ---------- */
+(function(){
+  var svg=document.getElementById("c-cal");
+  var pts=[{c:.42,a:.403,n:67},{c:.55,a:.457,n:140},{c:.65,a:.603,n:141},
+           {c:.75,a:.658,n:146},{c:.85,a:.812,n:218},{c:.95,a:.947,n:752}];
+  var L=64,R=600,T=22,B=238,W=R-L,H=B-T;
+  var X=function(v){return L+((v-.3)/.7)*W;}, Y=function(v){return B-((v-.3)/.7)*H;};
+  [.4,.6,.8,1].forEach(function(t){
+    svg.appendChild(el("line",{x1:L,y1:Y(t),x2:R,y2:Y(t),"class":"gridline"}));
+    svg.appendChild(el("text",{x:L-10,y:Y(t)+4,"text-anchor":"end","class":"ax"})).textContent=(t*100).toFixed(0)+"%";
+    svg.appendChild(el("line",{x1:X(t),y1:T,x2:X(t),y2:B,"class":"gridline"}));
+    svg.appendChild(el("text",{x:X(t),y:B+18,"text-anchor":"middle","class":"ax"})).textContent=(t*100).toFixed(0)+"%";
+  });
+  svg.appendChild(el("line",{x1:X(.3),y1:Y(.3),x2:X(1),y2:Y(1),
+    stroke:css("--faint"),"stroke-width":2,"stroke-dasharray":"5 4"}));
+  svg.appendChild(el("text",{x:X(.86),y:Y(.94),"class":"ax",fill:css("--faint")})).textContent="perfect";
+  var d="";pts.forEach(function(p,i){d+=(i?" L":"M")+X(p.c)+" "+Y(p.a);});
+  var path=el("path",{d:d,fill:"none",stroke:css("--accent"),"stroke-width":2,
+    "stroke-linecap":"round","stroke-linejoin":"round"});
+  svg.appendChild(path);
+  if(!reduce){var len=path.getTotalLength();
+    path.style.strokeDasharray=len;path.style.strokeDashoffset=len;
+    path.style.transition="stroke-dashoffset 1.1s ease-out";}
+  pts.forEach(function(p){
+    var g=el("g");
+    g.appendChild(el("circle",{cx:X(p.c),cy:Y(p.a),r:6,fill:css("--paper"),
+      stroke:css("--accent"),"stroke-width":2}));
+    svg.appendChild(g);
+    hoverable(g,"confidence ≈"+(p.c*100).toFixed(0)+"% → "+(p.a*100).toFixed(1)+"% correct (n="+p.n+")");
+  });
+  svg.appendChild(el("text",{x:(L+R)/2,y:B+40,"text-anchor":"middle","class":"ax"}))
+     .textContent="model's stated confidence";
+  svg.appendChild(el("text",{x:14,y:(T+B)/2,"class":"ax",transform:"rotate(-90 14 "+((T+B)/2)+")",
+    "text-anchor":"middle"})).textContent="observed accuracy";
+  onView(svg,function(){ if(!reduce) path.style.strokeDashoffset=0; });
+})();
+})();
 </script>
 </body>
 </html>
