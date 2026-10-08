@@ -1,0 +1,352 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="robots" content="noindex,nofollow">
+<title>Apply</title>
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Apply">
+<meta name="theme-color" content="#0B0D11">
+<link rel="apple-touch-icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 180 180'%3E%3Crect width='180' height='180' rx='40' fill='%230B0D11'/%3E%3Ctext x='90' y='122' font-family='-apple-system,Helvetica' font-size='96' font-weight='700' fill='%232FB573' text-anchor='middle'%3EA%3C/text%3E%3C/svg%3E">
+<style>
+:root{
+  --bg:#0B0D11; --card:#141820; --card2:#1A202A;
+  --ink:#EEF2F5; --mut:#8C98A4; --faint:#5C6773;
+  --line:rgba(255,255,255,.09);
+  --acc:#2FB573; --acc-dim:rgba(47,181,115,.14);
+  --warn:#E0A33C;
+  --mono:ui-monospace,"SF Mono",Menlo,monospace;
+  --sans:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+}
+@media (prefers-color-scheme:light){
+  :root{--bg:#F6F7F8;--card:#FFF;--card2:#F1F3F5;--ink:#11161C;--mut:#5B666F;--faint:#8D97A0;
+        --line:rgba(16,22,28,.12);--acc:#15784A;--acc-dim:rgba(21,120,74,.10);--warn:#95650F;}
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--sans);font-size:16px;line-height:1.5;
+  padding:env(safe-area-inset-top) 0 env(safe-area-inset-bottom)}
+.wrap{max-width:780px;margin:0 auto;padding:18px 16px 60px}
+header{display:flex;align-items:center;gap:10px;margin-bottom:16px}
+h1{font-size:1.15rem;margin:0;font-weight:700;letter-spacing:-.01em}
+.sub{font-family:var(--mono);font-size:.62rem;letter-spacing:.16em;text-transform:uppercase;color:var(--acc);margin:0}
+.gear{margin-left:auto;background:none;border:1px solid var(--line);color:var(--mut);
+  border-radius:8px;padding:7px 11px;font-size:.78rem;cursor:pointer}
+textarea{width:100%;min-height:190px;background:var(--card);color:var(--ink);border:1px solid var(--line);
+  border-radius:12px;padding:13px;font-size:15px;font-family:var(--sans);resize:vertical;outline:none}
+textarea:focus{border-color:var(--acc);box-shadow:0 0 0 3px var(--acc-dim)}
+.row{display:flex;gap:8px;margin-top:10px;flex-wrap:wrap}
+input[type=text]{flex:1;min-width:130px;background:var(--card);color:var(--ink);border:1px solid var(--line);
+  border-radius:10px;padding:11px 12px;font-size:15px;outline:none}
+input[type=text]:focus{border-color:var(--acc)}
+button.go{width:100%;margin-top:12px;background:var(--acc);color:#061009;border:0;border-radius:12px;
+  padding:15px;font-size:1rem;font-weight:700;cursor:pointer}
+button.go:active{opacity:.85}
+.tabs{display:flex;gap:6px;margin:18px 0 10px;overflow-x:auto;-webkit-overflow-scrolling:touch}
+.tab{white-space:nowrap;font-family:var(--mono);font-size:.68rem;letter-spacing:.06em;text-transform:uppercase;
+  padding:8px 13px;border-radius:999px;border:1px solid var(--line);background:transparent;color:var(--mut);cursor:pointer}
+.tab[aria-selected=true]{background:var(--acc);border-color:var(--acc);color:#061009;font-weight:700}
+.panel{display:none}.panel.on{display:block}
+.card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:15px;margin-bottom:11px}
+.card h3{margin:0 0 9px;font-size:.78rem;font-family:var(--mono);letter-spacing:.12em;text-transform:uppercase;color:var(--acc)}
+pre{white-space:pre-wrap;word-wrap:break-word;margin:0;font-family:var(--sans);font-size:15px;line-height:1.52}
+.meta{font-family:var(--mono);font-size:.72rem;color:var(--mut);margin:0 0 10px}
+.bar{height:7px;background:var(--card2);border-radius:99px;overflow:hidden;margin:7px 0 4px}
+.bar i{display:block;height:100%;background:var(--acc);width:0;transition:width .5s}
+.chips{display:flex;flex-wrap:wrap;gap:5px;margin-top:8px}
+.chip{font-family:var(--mono);font-size:.63rem;padding:3px 8px;border-radius:5px;background:var(--acc-dim);color:var(--acc)}
+.chip.no{background:rgba(224,163,60,.14);color:var(--warn)}
+.copy{background:var(--card2);border:1px solid var(--line);color:var(--ink);border-radius:8px;
+  padding:8px 13px;font-size:.8rem;cursor:pointer;margin-top:10px}
+.copy:active{background:var(--acc);color:#061009}
+a{color:var(--acc)}
+.hint{color:var(--faint);font-size:.82rem;margin-top:8px}
+dialog{border:1px solid var(--line);border-radius:14px;background:var(--card);color:var(--ink);
+  max-width:420px;width:92%;padding:18px}
+dialog::backdrop{background:rgba(0,0,0,.6)}
+dialog label{display:block;font-size:.76rem;color:var(--mut);margin:10px 0 4px}
+dialog input{width:100%}
+.small{font-size:.8rem;color:var(--mut)}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header>
+  <div>
+    <p class="sub">Tailor</p>
+    <h1>Job ad in, application out</h1>
+  </div>
+  <button class="gear" id="gear">Details</button>
+</header>
+
+<textarea id="jd" placeholder="Paste the whole job ad here, then hit Tailor."></textarea>
+<div class="row">
+  <input type="text" id="company" placeholder="Company">
+  <input type="text" id="role" placeholder="Role title">
+</div>
+<button class="go" id="go">Tailor</button>
+<p class="hint" id="hint">Everything runs on your phone. Nothing is sent anywhere.</p>
+
+<div id="out" style="display:none">
+  <div class="tabs" role="tablist">
+    <button class="tab" data-p="cv" aria-selected="true">CV</button>
+    <button class="tab" data-p="cover" aria-selected="false">Cover letter</button>
+    <button class="tab" data-p="reach" aria-selected="false">Who to message</button>
+    <button class="tab" data-p="ats" aria-selected="false">ATS check</button>
+  </div>
+
+  <div class="panel on" id="p-cv"></div>
+  <div class="panel" id="p-cover"></div>
+  <div class="panel" id="p-reach"></div>
+  <div class="panel" id="p-ats"></div>
+</div>
+
+</div>
+
+<dialog id="dlg">
+  <h3 style="margin:0 0 4px;font-size:1rem">Your details</h3>
+  <p class="small" style="margin:0">Kept on this device only, never in the page source.</p>
+  <label>Email</label><input type="text" id="s-email" placeholder="you@example.com">
+  <label>Phone</label><input type="text" id="s-phone" placeholder="+44 ...">
+  <label>Location</label><input type="text" id="s-loc" placeholder="London, UK">
+  <div class="row" style="margin-top:14px">
+    <button class="copy" id="s-save" style="flex:1">Save</button>
+    <button class="copy" id="s-close" style="flex:1">Close</button>
+  </div>
+</dialog>
+
+<script>
+const VOCAB={python:"python",sql:"sql",pandas:"python",numpy:"python",scikit:"ml",sklearn:"ml",
+xgboost:"xgboost","machine learning":"ml",statistic:"statistics",regression:"regression",
+classification:"classification",forecast:"forecasting","time series":"forecasting",
+cluster:"clustering",segmentation:"clustering",nlp:"nlp","natural language":"nlp",
+sentiment:"sentiment",text:"text",llm:"llm","large language":"llm",genai:"genai",
+generative:"genai",rag:"rag",retrieval:"retrieval",embedding:"embeddings",langchain:"langchain",
+churn:"churn",retention:"retention","lifetime value":"clv",clv:"clv",customer:"customer",
+marketing:"marketing",revenue:"revenue",dashboard:"dashboard",tableau:"dashboard",
+"power bi":"dashboard",looker:"dashboard",visualis:"visualisation",visualiz:"visualisation",
+reporting:"reporting",stakeholder:"stakeholder",etl:"etl",dbt:"dbt",snowflake:"snowflake",
+bigquery:"bigquery",postgres:"postgresql",pipeline:"pipeline",warehouse:"warehouse",
+aws:"aws",gcp:"gcp",azure:"cloud",docker:"docker",mlops:"mlops",deploy:"deployment",
+production:"production",mlflow:"mlops",shap:"shap",interpretab:"interpretability",
+explainab:"explainability",experiment:"experiment",hypothes:"statistics",football:"football",
+sport:"sports",betting:"betting",odds:"odds",racing:"sports",wagering:"betting",
+health:"health",clinical:"health",patient:"health",nhs:"health",medical:"health",
+psycholog:"psychology",behaviour:"behavioural",behavior:"behavioural",git:"git",
+communicat:"communication",research:"research",survey:"survey",api:"api",
+recommend:"recommendation"};
+const SHORT=new Set(["sql","nlp","aws","gcp","clv","rag","etl","dbt","api","llm","git","shap"]);
+const DOMAIN_HINTS={sports:["football","sports","betting","odds"],
+ health:["health","psychology"],nlp:["nlp","text","sentiment","llm","rag"],
+ analyst:["dashboard","reporting","etl","sql","stakeholder","warehouse"]};
+const WHY={sports:"what drew me to {c} is that it is one of the few places where this kind of modelling is the product rather than a side project",
+ health:"what drew me to {c} is that the hard part is measurement rather than modelling, and that is the half I am trained in",
+ nlp:"what drew me to {c} is working on real customer language at volume rather than on a tidy benchmark",
+ analyst:"what drew me to {c} is the breadth, since the analysts who get good are usually the ones answering questions across the whole business",
+ general:"what drew me to {c} is the chance to work on questions where the analysis actually changes a decision"};
+const HOOK={sports:"I build a football match and betting-market model in my own time, so I come at this with the domain already in my head rather than learning it on the job.",
+ health:"My first degree is Psychology, so measurement and construct validity are where I started, which is most of the problem in health data.",
+ nlp:"Most of my hands-on work is NLP on real customer text, and I have one classifier deployed behind an API rather than sitting in a notebook.",
+ analyst:"My background is SQL and reporting pipelines before modelling, so I am comfortable owning the unglamorous half that makes the analysis trustworthy.",
+ general:"My background pairs psychology with applied machine learning, which tends to show up as caring whether a number means what people think it means."};
+const TARGETS=[["Hiring manager",["Head of Data","Head of Analytics","Lead Data Scientist"],"Owns the headcount. One reply beats twenty applications."],
+ ["Someone doing the job",["Data Scientist","Data Analyst","Machine Learning Engineer"],"Most likely to reply, and can refer you internally."],
+ ["Internal recruiter",["Talent Partner","Talent Acquisition","Technical Recruiter"],"Can move your CV from the pile to a human."]];
+
+let P=null;
+const $=id=>document.getElementById(id);
+const flat=s=>s.replace(/\s+/g," ").trim();
+
+fetch("profile.json").then(r=>r.json()).then(d=>{P=d;})
+  .catch(()=>{$("hint").textContent="Could not load profile.json - is it next to this page?";});
+
+// contact details live here, not in the repo
+const S=()=>{try{return JSON.parse(localStorage.getItem("kc_contact")||"{}")}catch(e){return{}}};
+function openDlg(){const s=S();$("s-email").value=s.email||"";$("s-phone").value=s.phone||"";
+  $("s-loc").value=s.loc||"London, UK";$("dlg").showModal();}
+$("gear").onclick=openDlg;
+$("s-close").onclick=()=>$("dlg").close();
+$("s-save").onclick=()=>{localStorage.setItem("kc_contact",JSON.stringify(
+  {email:$("s-email").value.trim(),phone:$("s-phone").value.trim(),loc:$("s-loc").value.trim()}));
+  $("dlg").close();};
+
+function keywords(t){
+  const low=t.toLowerCase(),f={};
+  for(const [p,tag] of Object.entries(VOCAB)){
+    const esc=p.replace(/[.*+?^${}()|[\]\\]/g,"\\$&");
+    const re=SHORT.has(p)?new RegExp("\\b"+esc+"\\b","g"):new RegExp("\\b"+esc+"\\w*","g");
+    const n=(low.match(re)||[]).length;
+    if(n) f[tag]=(f[tag]||0)+n;
+  }
+  return f;
+}
+const sc=(tags,f)=>(tags||[]).reduce((a,t)=>a+(f[t]||0),0);
+function domainOf(f){
+  // sector beats technique: a health NLP job is a health job, and the sector is the
+  // stronger pitch. Otherwise technique words simply outnumber sector words.
+  const sc_=d=>DOMAIN_HINTS[d].reduce((a,t)=>a+(f[t]||0),0);
+  for(const sector of ["sports","health"]) if(sc_(sector)>=2) return sector;
+  let best="general",b=0;
+  for(const d of Object.keys(DOMAIN_HINTS)){
+    const s=sc_(d);
+    if(s>b){b=s;best=d;}
+  }
+  return b>=2?best:"general";
+}
+
+function buildCV(f,dom){
+  const s=P.summary, c=S();
+  const opener=flat(s.openers[dom]||s.openers.general);
+  const proofs=[...s.proof].sort((a,b)=>sc(b.tags,f)-sc(a.tags,f));
+  let top=proofs.filter(p=>sc(p.tags,f)>0).slice(0,2).map(p=>flat(p.text));
+  if(!top.length) top=[flat(proofs[0].text)];
+  const ck=(f.communication||f.stakeholder)?"communication":(f.production||f.mlops)?"production":"default";
+  const summary=`${opener} Recent work: ${top.join("; ")}. ${flat(s.closers[ck])}`;
+
+  const skills=P.skills.filter(g=>g.always||sc(g.tags,f)>0);
+  const exp=P.experience.map(r=>{
+    const bl=[...r.bullets].sort((a,b)=>((b.always?1:0)-(a.always?1:0))||(sc(b.tags,f)-sc(a.tags,f)));
+    let keep=bl.filter(b=>b.always||sc(b.tags,f)>0);
+    if(keep.length<3) keep=bl.slice(0,3);
+    return {...r,chosen:keep.slice(0,4)};
+  });
+  let projs=[...P.projects].sort((a,b)=>sc(b.tags,f)-sc(a.tags,f)).filter(p=>sc(p.tags,f)>0).slice(0,4);
+  if(projs.length<3) projs=[...P.projects].slice(0,3);
+
+  const head=[P.contact.name,
+    [c.loc||"London, UK",c.email,c.phone].filter(Boolean).join("  |  "),
+    P.contact.links.join("  |  ")].join("\n");
+
+  let t=head+"\n\nPROFESSIONAL SUMMARY\n"+summary+"\n\nSKILLS\n";
+  skills.forEach(g=>t+=`${g.label}: ${flat(g.text)}\n`);
+  t+="\nEXPERIENCE\n";
+  exp.forEach(r=>{
+    t+=`\n${r.role}, ${r.org}${r.place?", "+r.place:""}   ${r.start} to ${r.end}\n`;
+    r.chosen.forEach(b=>t+=`• ${flat(b.text)}\n`);
+    if(r.stack) t+=`${r.stack.replace(/ · /g,", ")}\n`;
+  });
+  t+="\nPROJECTS\n";
+  projs.forEach(p=>{
+    t+=`\n${p.name}  ${p.stack}${p.live?"  |  "+p.live:""}\n`;
+    p.bullets.forEach(b=>t+=`• ${flat(b)}\n`);
+  });
+  t+="\nEDUCATION\n";
+  P.education.forEach(e=>t+=`\n${e.qual}, ${e.org}   ${e.years}\n${e.detail}\n`);
+  return {text:t,skills,exp,projs,summary};
+}
+
+function buildCover(f,dom,company,role,to){
+  const projs=[...P.projects].sort((a,b)=>sc(b.tags,f)-sc(a.tags,f));
+  const proofs=[...P.summary.proof].sort((a,b)=>sc(b.tags,f)-sc(a.tags,f));
+  const lead=projs[0], c=S();
+  const why=(WHY[dom]||WHY.general).replace("{c}",company||"you");
+  const paras=[
+   `I am writing about the ${role||"Data Scientist"} role. I am an applied data scientist with an MSc in Applied Data Science and a first degree in Psychology, and ${why}.`,
+   `The closest thing I have to your problem is my ${lead.name.toLowerCase()} work. ${flat(lead.bullets[0])} ${lead.bullets[1]?flat(lead.bullets[1]):""}`,
+   `More broadly I have ${flat((proofs[1]||proofs[0]).text)}. Day to day I work in Python and SQL, and I have taken models through to deployment rather than leaving them in a notebook.`,
+   `The part of the job I care most about is the write-up. A model that nobody acts on has not done anything, so I try to report the uncomfortable result as readily as the flattering one.`,
+   `My code and write-ups are public at ${P.contact.links[0]}. I would welcome the chance to talk it through.`];
+  const head=[P.contact.name,[c.loc||"London, UK",c.email,c.phone].filter(Boolean).join("  |  "),
+    P.contact.links.join(" | ")].join("\n");
+  return head+"\n\n"+(to?`Dear ${to},`:"Dear Hiring Manager,")+"\n\n"+
+    paras.map(flat).join("\n\n")+"\n\nYours sincerely,\nKaycee Ndukuba";
+}
+
+function buildReach(f,dom,company,role){
+  const hook=HOOK[dom]||HOOK.general;
+  const top=Object.entries(f).sort((a,b)=>b[1]-a[1]).slice(0,2).map(x=>x[0]).join(", ")||"the data side";
+  const co=company||"[company]", rt=role||"the Data role";
+  let h="";
+  TARGETS.forEach((t,i)=>{
+    h+=`<div class="card"><h3>${i+1}. ${t[0]}</h3><p class="meta">${t[2]}</p>`;
+    t[1].forEach(title=>{
+      const u="https://www.linkedin.com/search/results/people/?keywords="+encodeURIComponent(title+" "+co);
+      h+=`<div style="margin:5px 0"><a href="${u}" target="_blank" rel="noopener">${title}</a></div>`;
+    });
+    h+=`</div>`;
+  });
+  const msgs=[["Connection request (300 char max)",
+    `Hi [name] - I've applied for the ${rt} role at ${co} and wanted to introduce myself rather than just sit in the pile. ${hook}`.slice(0,300)],
+   ["To someone on the team",
+    `Hi [name] - I've applied for the ${rt} role at ${co} and saw you're on the team. Would you be open to a quick question about what the work is actually like day to day? Specifically curious how much of it is ${top}. No worries if you're busy.`],
+   ["To the hiring manager",
+    `Hi [name] - I've applied for the ${rt} role. I won't repeat my CV at you, but the short version: ${hook} I've also written a couple of projects up publicly at ${P.contact.links[0]} if you'd rather see the work than read a CV.`],
+   ["Follow-up, 7-10 days later",
+    `Hi [name] - following up on my application for the ${rt} role from last week. Still very interested. If it's already moved on that's completely fine, I'd just rather know than wonder.`]];
+  msgs.forEach(([t,b],i)=>{
+    h+=`<div class="card"><h3>${t}</h3><pre id="m${i}">${b}</pre>
+        <button class="copy" onclick="cp('m${i}',this)">Copy</button></div>`;
+  });
+  h+=`<div class="card"><h3>Rules</h3><pre>Message 3-4 people per company, not one.
+Always say you have applied - they check anyway.
+Ask for something small. "One question" beats "a call".
+Replace [name] and reference one real thing about them.
+Follow up once after 7-10 days, then stop.</pre></div>`;
+  return h;
+}
+
+function buildATS(f,built){
+  const covered=new Set();
+  built.skills.forEach(g=>(g.tags||[]).forEach(t=>covered.add(t)));
+  built.exp.forEach(r=>r.chosen.forEach(b=>(b.tags||[]).forEach(t=>covered.add(t))));
+  built.projs.forEach(p=>(p.tags||[]).forEach(t=>covered.add(t)));
+  const all=Object.keys(f), hit=all.filter(k=>covered.has(k)), miss=all.filter(k=>!covered.has(k));
+  const pct=all.length?Math.round(100*hit.length/all.length):0;
+  let h=`<div class="card"><h3>Keyword coverage</h3>
+    <div class="bar"><i style="width:${pct}%"></i></div>
+    <p class="meta">${pct}% - ${hit.length} of ${all.length} terms from the ad appear in your CV</p>
+    <div class="chips">${hit.map(k=>`<span class="chip">${k}</span>`).join("")}</div>`;
+  if(miss.length) h+=`<p class="meta" style="margin-top:12px">Not covered</p>
+    <div class="chips">${miss.map(k=>`<span class="chip no">${k}</span>`).join("")}</div>
+    <p class="hint">Only add these if they are genuinely true of you. A keyword you cannot
+    defend in an interview is worse than a missing one.</p>`;
+  h+=`</div><div class="card"><h3>Chosen for this job</h3>
+    <pre>Projects: ${built.projs.map(p=>p.name).join("\n          ")}</pre></div>`;
+  return h;
+}
+
+function cp(id,btn){
+  const t=document.getElementById(id).textContent;
+  navigator.clipboard.writeText(t).then(()=>{
+    const o=btn.textContent;btn.textContent="Copied";setTimeout(()=>btn.textContent=o,1200);
+  });
+}
+window.cp=cp;
+
+$("go").onclick=()=>{
+  if(!P){$("hint").textContent="Still loading your profile, try again in a second.";return;}
+  const jd=$("jd").value.trim();
+  if(jd.length<40){$("hint").textContent="Paste a bit more of the ad - it needs something to work with.";return;}
+  const company=$("company").value.trim(), role=$("role").value.trim();
+  const f=keywords(jd), dom=domainOf(f);
+  const built=buildCV(f,dom);
+
+  $("p-cv").innerHTML=`<div class="card"><h3>Tailored CV - ${dom}</h3>
+    <pre id="cvtext">${built.text.replace(/[&<>]/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;"}[m]))}</pre>
+    <button class="copy" onclick="cp('cvtext',this)">Copy all</button>
+    <p class="hint">Paste into a blank Word or Google doc. Keep it single column,
+    no tables, no text boxes.</p></div>`;
+  $("p-cover").innerHTML=`<div class="card"><h3>Cover letter</h3>
+    <pre id="covtext">${buildCover(f,dom,company,role).replace(/[&<>]/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;"}[m]))}</pre>
+    <button class="copy" onclick="cp('covtext',this)">Copy</button>
+    <p class="hint">Read it before sending. It is a strong draft, not a finished letter.</p></div>`;
+  $("p-reach").innerHTML=buildReach(f,dom,company,role);
+  $("p-ats").innerHTML=buildATS(f,built);
+
+  $("out").style.display="block";
+  $("hint").textContent=`Detected ${dom}. ${Object.keys(f).length} keywords found.`;
+  $("out").scrollIntoView({behavior:"smooth",block:"start"});
+};
+
+document.querySelectorAll(".tab").forEach(b=>{
+  b.onclick=()=>{
+    document.querySelectorAll(".tab").forEach(x=>x.setAttribute("aria-selected",x===b));
+    document.querySelectorAll(".panel").forEach(p=>p.classList.remove("on"));
+    $("p-"+b.dataset.p).classList.add("on");
+  };
+});
+</script>
+</body>
+</html>

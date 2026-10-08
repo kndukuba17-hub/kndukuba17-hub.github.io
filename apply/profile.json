@@ -1,0 +1,533 @@
+{
+ "contact": {
+  "name": "KAYCEE NDUKUBA",
+  "links": [
+   "kndukuba17-hub.github.io",
+   "linkedin.com/in/kayceendukuba",
+   "github.com/kndukuba17-hub"
+  ]
+ },
+ "summary": {
+  "openers": {
+   "sports": "Data scientist with an MSc in Applied Data Science and a psychology background, working on behavioural and predictive modelling. Spend my own time building a football match and betting-market model, so I know this domain from the data up.",
+   "health": "Applied data scientist with an MSc in Applied Data Science and a BSc in Psychology. Work sits where behaviour meets measurement, which is the core of most health data problems: deciding what a number actually means before modelling it.",
+   "nlp": "Applied data scientist with an MSc in Applied Data Science and a psychology background. Most of my hands-on work is NLP on real customer text, from classical pipelines through to retrieval and embeddings.",
+   "analyst": "Data analyst with an MSc in Applied Data Science, turning messy operational data into reporting and analysis people act on. Strong SQL and Python, and a habit of checking a number reconciles before it reaches a stakeholder.",
+   "general": "Applied data scientist with an MSc in Applied Data Science and a BSc in Psychology, pairing behavioural insight with machine learning to answer commercial questions."
+  },
+  "proof": [
+   {
+    "text": "built a lifetime-value model on 1.07M real transactions where the top predicted decile captured about 63% of actual future revenue",
+    "tags": [
+     "clv",
+     "regression",
+     "xgboost",
+     "customer",
+     "revenue",
+     "forecasting",
+     "retail",
+     "marketing"
+    ]
+   },
+   {
+    "text": "built churn models reaching roughly half of all churners in the riskiest 20% of the base",
+    "tags": [
+     "churn",
+     "retention",
+     "classification",
+     "customer",
+     "telecom",
+     "risk"
+    ]
+   },
+   {
+    "text": "classified 14,640 real customer messages with a tuned scikit-learn pipeline and deployed it behind an API on AWS Lambda with monitoring",
+    "tags": [
+     "nlp",
+     "sentiment",
+     "text",
+     "classification",
+     "aws",
+     "deployment",
+     "mlops",
+     "api"
+    ]
+   },
+   {
+    "text": "validated the five-factor personality structure on 603,000 survey responses, and reported honestly that the clusters were weak rather than selling four tidy segments",
+    "tags": [
+     "psychology",
+     "statistics",
+     "research",
+     "validation",
+     "clustering",
+     "behavioural",
+     "survey"
+    ]
+   },
+   {
+    "text": "built a football model across 24,634 matches and 24 competitions, benchmarked against closing prices rather than short-run profit",
+    "tags": [
+     "football",
+     "sports",
+     "betting",
+     "odds",
+     "forecasting",
+     "simulation",
+     "probability"
+    ]
+   },
+   {
+    "text": "automated recurring SQL reporting and built ETL in dbt on Snowflake",
+    "tags": [
+     "sql",
+     "etl",
+     "dbt",
+     "snowflake",
+     "reporting",
+     "pipeline",
+     "warehouse",
+     "analyst"
+    ]
+   },
+   {
+    "text": "built an interactive retention dashboard on 7,043 customers with cross-filtering and hand-built charts",
+    "tags": [
+     "dashboard",
+     "bi",
+     "visualisation",
+     "reporting",
+     "frontend",
+     "stakeholder"
+    ]
+   }
+  ],
+  "closers": {
+   "default": "Comfortable owning a question end to end, from the data in to the write-up a non-technical reader can act on.",
+   "communication": "The part I care most about is the write-up: turning a model output into something a non-technical reader can act on.",
+   "production": "Interested in work that reaches production rather than stopping at a notebook."
+  }
+ },
+ "skills": [
+  {
+   "label": "Programming & Databases",
+   "text": "Python (pandas, NumPy, scikit-learn), SQL (PostgreSQL, BigQuery, Snowflake), R, Git/GitHub",
+   "tags": [
+    "python",
+    "sql",
+    "postgresql",
+    "bigquery",
+    "snowflake",
+    "r",
+    "git",
+    "core"
+   ],
+   "always": true
+  },
+  {
+   "label": "Machine Learning & Statistics",
+   "text": "Predictive modelling, classification & regression, feature engineering, cross-validation, class-imbalance handling, model evaluation (ROC-AUC, precision/recall/F1), hypothesis testing",
+   "tags": [
+    "ml",
+    "machine learning",
+    "modelling",
+    "statistics",
+    "classification",
+    "regression",
+    "evaluation",
+    "core"
+   ],
+   "always": true
+  },
+  {
+   "label": "Interpretability",
+   "text": "SHAP, feature importance, coefficient analysis",
+   "tags": [
+    "shap",
+    "interpretability",
+    "explainability",
+    "transparency"
+   ]
+  },
+  {
+   "label": "NLP & AI",
+   "text": "Sentiment analysis, text classification, topic analysis, LLMs, Retrieval-Augmented Generation (LangChain, FAISS, sentence embeddings), prompt engineering",
+   "tags": [
+    "nlp",
+    "llm",
+    "text",
+    "sentiment",
+    "rag",
+    "langchain",
+    "faiss",
+    "embeddings",
+    "ai",
+    "genai"
+   ]
+  },
+  {
+   "label": "Data Engineering & MLOps",
+   "text": "ETL, dbt, automation, data quality, Docker, GitHub Actions, MLflow, AWS, GCP",
+   "tags": [
+    "etl",
+    "dbt",
+    "mlops",
+    "docker",
+    "aws",
+    "gcp",
+    "pipeline",
+    "deployment",
+    "engineering",
+    "cloud"
+   ]
+  },
+  {
+   "label": "Visualisation & Reporting",
+   "text": "Matplotlib, Seaborn, Jupyter, dashboards, stakeholder reporting",
+   "tags": [
+    "visualisation",
+    "dashboard",
+    "bi",
+    "reporting",
+    "tableau",
+    "powerbi",
+    "communication"
+   ],
+   "always": true
+  },
+  {
+   "label": "Statistical & Research Methods",
+   "text": "Experimental design, hypothesis testing, multiple-comparison correction, survey and psychometric methods, calibration",
+   "tags": [
+    "statistics",
+    "research",
+    "psychology",
+    "experiment",
+    "ab testing",
+    "validation",
+    "health",
+    "academic"
+   ]
+  }
+ ],
+ "experience": [
+  {
+   "role": "AI & Data Scientist",
+   "org": "Yves OS",
+   "place": "London",
+   "start": "Dec 2025",
+   "end": "Present",
+   "stack": "Python \u00b7 SQL \u00b7 Machine Learning \u00b7 LLMs \u00b7 pandas \u00b7 PostgreSQL \u00b7 AWS",
+   "bullets": [
+    {
+     "text": "Developed behavioural analytics workflows that turned multi-platform user-interaction data into measurable insights, used to prioritise product features.",
+     "tags": [
+      "behavioural",
+      "analytics",
+      "product",
+      "user",
+      "core"
+     ],
+     "always": true
+    },
+    {
+     "text": "Applied large language models to generate personalised recommendations and summaries, then evaluated the outputs against defined quality criteria to refine prompt design.",
+     "tags": [
+      "llm",
+      "genai",
+      "nlp",
+      "evaluation",
+      "recommendation",
+      "ai"
+     ]
+    },
+    {
+     "text": "Tested and refined AI-driven recommendation workflows using user feedback and exploratory analysis, improving recommendation relevance.",
+     "tags": [
+      "recommendation",
+      "ai",
+      "experiment",
+      "user",
+      "product"
+     ]
+    },
+    {
+     "text": "Built engagement and productivity metrics that quantified user behaviour and informed product decisions, reported to stakeholders through dashboards.",
+     "tags": [
+      "metrics",
+      "kpi",
+      "dashboard",
+      "stakeholder",
+      "reporting",
+      "product",
+      "analyst"
+     ]
+    }
+   ]
+  },
+  {
+   "role": "Machine Learning Engineer",
+   "org": "Freelance / Contract",
+   "place": "",
+   "start": "Jan 2025",
+   "end": "Dec 2025",
+   "stack": "Python \u00b7 scikit-learn \u00b7 SQL \u00b7 AWS \u00b7 GCP \u00b7 Docker \u00b7 GitHub Actions \u00b7 MLflow",
+   "bullets": [
+    {
+     "text": "Delivered applied machine learning and analytics across several private-sector engagements, turning business questions into models and measurable recommendations.",
+     "tags": [
+      "consulting",
+      "client",
+      "stakeholder",
+      "ml",
+      "core"
+     ],
+     "always": true
+    },
+    {
+     "text": "Engagements covered customer analytics, churn modelling, predictive modelling, demand forecasting and behavioural analysis.",
+     "tags": [
+      "churn",
+      "customer",
+      "forecasting",
+      "demand",
+      "behavioural",
+      "retail"
+     ]
+    },
+    {
+     "text": "Built end-to-end analytical workflows in Python and SQL, from data preparation and feature engineering through to model training and evaluation.",
+     "tags": [
+      "python",
+      "sql",
+      "feature engineering",
+      "pipeline",
+      "ml",
+      "core"
+     ]
+    },
+    {
+     "text": "Deployed and maintained production models with Docker on AWS/GCP, automating testing and model versioning through GitHub Actions and MLflow.",
+     "tags": [
+      "deployment",
+      "docker",
+      "aws",
+      "gcp",
+      "mlops",
+      "production",
+      "cicd",
+      "engineering"
+     ]
+    }
+   ]
+  },
+  {
+   "role": "Data Analyst",
+   "org": "Plan-Net",
+   "place": "Leicester",
+   "start": "Oct 2023",
+   "end": "Nov 2024",
+   "stack": "SQL \u00b7 Python \u00b7 ETL \u00b7 dbt \u00b7 Snowflake \u00b7 Git",
+   "bullets": [
+    {
+     "text": "Automated recurring reporting with SQL and Python, cutting manual effort and improving turnaround for business stakeholders.",
+     "tags": [
+      "sql",
+      "reporting",
+      "automation",
+      "stakeholder",
+      "analyst",
+      "core"
+     ],
+     "always": true
+    },
+    {
+     "text": "Designed and maintained ETL workflows that improved data quality, consistency and reliability across reporting pipelines.",
+     "tags": [
+      "etl",
+      "dbt",
+      "snowflake",
+      "pipeline",
+      "data quality",
+      "engineering",
+      "warehouse"
+     ]
+    },
+    {
+     "text": "Worked with stakeholders across teams to turn operational data into clear reports and recommendations that supported decisions.",
+     "tags": [
+      "stakeholder",
+      "communication",
+      "reporting",
+      "business",
+      "analyst"
+     ]
+    },
+    {
+     "text": "Analysed infrastructure and operational data to surface trends, recurring issues and opportunities for optimisation.",
+     "tags": [
+      "analysis",
+      "operations",
+      "trends",
+      "eda",
+      "analyst"
+     ]
+    }
+   ]
+  }
+ ],
+ "projects": [
+  {
+   "name": "Football Match & Betting-Market Model",
+   "stack": "Python, scikit-learn, simulation",
+   "private": true,
+   "tags": [
+    "football",
+    "sports",
+    "betting",
+    "odds",
+    "probability",
+    "simulation",
+    "forecasting",
+    "calibration",
+    "statistics"
+   ],
+   "bullets": [
+    "Modelled 24,634 matches across 24 competitions with walk-forward backtesting, evaluated against closing market prices rather than short-run profit.",
+    "Priced same-match multiples with a joint simulation, using a correlation matrix estimated from historical residuals rather than multiplying leg odds.",
+    "Corrected for multiple comparisons across competitions: a league showing 9.4% ROI had a naive p of 0.032 but a family-wise p of 0.40, so it was reported as noise rather than edge."
+   ]
+  },
+  {
+   "name": "Customer Lifetime Value Prediction",
+   "stack": "Python, XGBoost, SHAP",
+   "tags": [
+    "clv",
+    "revenue",
+    "regression",
+    "xgboost",
+    "customer",
+    "marketing",
+    "retail",
+    "forecasting",
+    "shap"
+   ],
+   "bullets": [
+    "Modelled 6-month customer spend from RFM behaviour on 1.07M real transactions using a leakage-safe temporal split.",
+    "XGBoost reached test R\u00b2 0.69 and MAE \u00a3600; the top 10% of predicted customers captured about 63% of actual future revenue against 10% at random.",
+    "Ranked the behavioural drivers of value with SHAP so the output was usable by marketing."
+   ]
+  },
+  {
+   "name": "Customer Churn Prediction",
+   "stack": "Python, scikit-learn, XGBoost, SHAP",
+   "tags": [
+    "churn",
+    "retention",
+    "classification",
+    "customer",
+    "risk",
+    "telecom",
+    "imbalance",
+    "shap"
+   ],
+   "bullets": [
+    "Predicted churn on 7,043 real telecom customers; logistic regression reached ROC-AUC 0.842 (5-fold CV 0.845) with 0.78 recall on the churn class.",
+    "Optimised for recall and ROC-AUC rather than accuracy, against a 73.5% majority baseline; the top 20% of predicted risk reaches about half of all churners.",
+    "Handled class imbalance and explained the drivers with coefficients and SHAP."
+   ]
+  },
+  {
+   "name": "Aviation Sentiment Classifier",
+   "stack": "Python, scikit-learn, AWS Lambda",
+   "tags": [
+    "nlp",
+    "sentiment",
+    "text",
+    "classification",
+    "aws",
+    "deployment",
+    "mlops",
+    "api",
+    "customer feedback"
+   ],
+   "bullets": [
+    "Classified 14,640 real airline customer messages into three classes with custom scikit-learn transformers and a tuned pipeline.",
+    "Bag-of-words beat Word2Vec on short, irregular text; reported macro F1 rather than accuracy because the data skews heavily negative.",
+    "Deployed as a container image on AWS Lambda with CloudWatch monitoring, with preprocessing inside the fitted pipeline so serving cannot drift from training."
+   ]
+  },
+  {
+   "name": "Big Five Personality Analysis",
+   "stack": "Python, PCA, K-Means",
+   "tags": [
+    "psychology",
+    "behavioural",
+    "statistics",
+    "research",
+    "validation",
+    "clustering",
+    "survey",
+    "health",
+    "academic"
+   ],
+   "bullets": [
+    "Validated the five-factor structure on 603,000 real survey responses: within-trait item correlation 0.37 against 0.01 across traits, with a PCA elbow at exactly five.",
+    "Segmented respondents with K-Means but reported the clusters as weak, concluding that personality is dimensional rather than categorical."
+   ]
+  },
+  {
+   "name": "Enterprise RAG Knowledge Assistant",
+   "stack": "Python, LangChain, FAISS",
+   "tags": [
+    "rag",
+    "llm",
+    "nlp",
+    "embeddings",
+    "search",
+    "retrieval",
+    "langchain",
+    "faiss",
+    "ai",
+    "genai"
+   ],
+   "bullets": [
+    "Built the retrieval layer of a RAG system: document chunking, sentence-transformer embeddings and FAISS semantic search over policy documents.",
+    "Scoped and documented honestly as retrieval only, with the generation step not yet built."
+   ]
+  },
+  {
+   "name": "Customer Churn Dashboard",
+   "stack": "JavaScript, SVG, HTML",
+   "live": "kndukuba17-hub.github.io/Customer-Churn-Dashboard",
+   "tags": [
+    "dashboard",
+    "bi",
+    "visualisation",
+    "reporting",
+    "frontend",
+    "stakeholder",
+    "churn",
+    "communication"
+   ],
+   "bullets": [
+    "Interactive retention dashboard on 7,043 real customers with client-side cross-filtering, KPI tiles including monthly revenue at risk, and hand-built charts with no plotting library.",
+    "Colour palette checked for contrast and colour-blind safety rather than chosen by eye."
+   ]
+  }
+ ],
+ "education": [
+  {
+   "qual": "MSc, Applied Data Science & Cyber Security",
+   "org": "Royal Holloway, University of London",
+   "years": "2025 \u2013 2026",
+   "detail": "Machine Learning, Neural Networks, Big Data Analytics, Statistical Modelling, Cyber Threat Intelligence"
+  },
+  {
+   "qual": "BSc, Psychology",
+   "org": "University of Leicester",
+   "years": "2021 \u2013 2024",
+   "detail": "Quantitative Research Methods, Behavioural Statistics, Cognitive Neuroscience"
+  }
+ ]
+}
