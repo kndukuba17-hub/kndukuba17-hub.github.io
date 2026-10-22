@@ -6,10 +6,13 @@
 <meta name="robots" content="noindex,nofollow">
 <title>Apply</title>
 <meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="Apply">
 <meta name="theme-color" content="#0B0D11">
-<link rel="apple-touch-icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 180 180'%3E%3Crect width='180' height='180' rx='40' fill='%230B0D11'/%3E%3Ctext x='90' y='122' font-family='-apple-system,Helvetica' font-size='96' font-weight='700' fill='%232FB573' text-anchor='middle'%3EA%3C/text%3E%3C/svg%3E">
+<!-- iOS ignores SVG and data: URIs for the home-screen icon, so this has to be a real PNG file -->
+<link rel="apple-touch-icon" href="icon-180.png">
+<link rel="icon" href="icon-180.png">
 <style>
 :root{
   --bg:#0B0D11; --card:#141820; --card2:#1A202A;
@@ -315,6 +318,35 @@ function cp(id,btn){
 }
 window.cp=cp;
 
+// Word opens an HTML document saved with a .doc extension, which keeps the layout
+// without needing a zip library in the browser. Open it in Word and Save As .docx
+// before uploading anywhere that parses CVs.
+function dl(id,filename){
+  const raw=document.getElementById(id).textContent;
+  const esc=s=>s.replace(/[&<>]/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;"}[m]));
+  const body=raw.split("\n").map(l=>{
+    const t=l.trim();
+    if(!t) return "<p style='margin:0;font-size:6pt'>&nbsp;</p>";
+    if(/^[A-Z][A-Z &]+$/.test(t))
+      return `<p style="margin:10pt 0 3pt;font-weight:bold;font-size:10.5pt">${esc(t)}</p>`;
+    if(t.startsWith("•"))
+      return `<p style="margin:0 0 2pt 14pt;font-size:10pt">${esc(t)}</p>`;
+    return `<p style="margin:0;font-size:10pt">${esc(t)}</p>`;
+  }).join("");
+  const html=`<html xmlns:o='urn:schemas-microsoft-com:office:office'
+    xmlns:w='urn:schemas-microsoft-com:office:word' xmlns='http://www.w3.org/TR/REC-html40'>
+    <head><meta charset='utf-8'><title>${esc(filename)}</title>
+    <style>@page{margin:1.6cm} body{font-family:Calibri,Arial,sans-serif;font-size:10pt;line-height:1.25}</style>
+    </head><body>${body}</body></html>`;
+  const blob=new Blob(["﻿",html],{type:"application/msword"});
+  const a=document.createElement("a");
+  a.href=URL.createObjectURL(blob);
+  a.download=filename+".doc";
+  document.body.appendChild(a); a.click();
+  setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove();},1500);
+}
+window.dl=dl;
+
 $("go").onclick=()=>{
   if(!P){$("hint").textContent="Still loading your profile, try again in a second.";return;}
   const jd=$("jd").value.trim();
@@ -326,11 +358,13 @@ $("go").onclick=()=>{
   $("p-cv").innerHTML=`<div class="card"><h3>Tailored CV - ${dom}</h3>
     <pre id="cvtext">${built.text.replace(/[&<>]/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;"}[m]))}</pre>
     <button class="copy" onclick="cp('cvtext',this)">Copy all</button>
-    <p class="hint">Paste into a blank Word or Google doc. Keep it single column,
-    no tables, no text boxes.</p></div>`;
+    <button class="copy" onclick="dl('cvtext','Kaycee Ndukuba - CV${company?" - "+company:""}')">Download for Word</button>
+    <p class="hint">Download, open in Word, then Save As .docx before uploading.
+    Single column, no tables - that is what parsers want.</p></div>`;
   $("p-cover").innerHTML=`<div class="card"><h3>Cover letter</h3>
     <pre id="covtext">${buildCover(f,dom,company,role).replace(/[&<>]/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;"}[m]))}</pre>
     <button class="copy" onclick="cp('covtext',this)">Copy</button>
+    <button class="copy" onclick="dl('covtext','Kaycee Ndukuba - Cover Letter${company?" - "+company:""}')">Download for Word</button>
     <p class="hint">Read it before sending. It is a strong draft, not a finished letter.</p></div>`;
   $("p-reach").innerHTML=buildReach(f,dom,company,role);
   $("p-ats").innerHTML=buildATS(f,built);
