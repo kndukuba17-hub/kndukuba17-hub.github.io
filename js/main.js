@@ -3,14 +3,18 @@
  * Deliberately additive: the original site still renders and works if this module fails
  * to load or the browser cannot run it. Everything here is enhancement.
  */
-import { tick, clamp, reduced, coarse } from "./tokens.js?v=20261117135457";
-import { PixelField } from "./pixel-field.js?v=20261117135457";
-import { Mii } from "./mii.js?v=20261117135457";
-import { Morph } from "./morph.js?v=20261117135457";
-import { Spotlight } from "./spotlight.js?v=20261117135457";
-import { Gallery } from "./gallery.js?v=20261117135457";
+import { tick, clamp, reduced, coarse } from "./tokens.js?v=20261117140108";
+import { PixelField } from "./pixel-field.js?v=20261117140108";
+import { Mii } from "./mii.js?v=20261117140108";
+import { Morph } from "./morph.js?v=20261117140108";
+import { Spotlight } from "./spotlight.js?v=20261117140108";
+import { Gallery } from "./gallery.js?v=20261117140108";
 
 const $ = id => document.getElementById(id);
+
+// declared up here because the bootstrap onScroll() below runs before the Featured
+// Work setup, and updateWall() reads `spot` - a later `let` would be in its TDZ
+let spot = null, gallery = null;
 
 /* ---------------------------------------------------------------- edge field ---- */
 let field = null;
@@ -130,6 +134,10 @@ if (heroEl && binEl && morphCv && btn) {
 /* -------------------------------------------------- scroll → field progress ---- */
 let ticking = false;
 function onScroll() {
+  // Also driven from the ticker. Scroll covers a backgrounded tab (where the ticker is
+  // deliberately paused); the ticker covers programmatic scrolls and resize. Writing the
+  // same value twice costs nothing.
+  updateWall();
   if (ticking) return;
   ticking = true;
   requestAnimationFrame(() => {
@@ -139,8 +147,6 @@ function onScroll() {
     // calm the edges down while reading the long project panels
     field?.setIntensity(p > .12 && p < .78 ? .55 : 1);
 
-    updateWall();
-
     // the handover runs across the back half of the hero
     if (morph && heroEl) {
       const h = heroEl.getBoundingClientRect();
@@ -149,6 +155,8 @@ function onScroll() {
     }
     ticking = false;
   });
+  // belt and braces: if that frame never runs, do not stay latched for ever
+  setTimeout(() => { ticking = false; }, 400);
 }
 addEventListener("scroll", onScroll, { passive: true });
 onScroll();
@@ -157,11 +165,11 @@ onScroll();
 if (reduced()) field?.setIntensity(.25);
 
 /* ------------------------------------------------- featured work: lit stage ---- */
-let spot = null, gallery = null;
 if ($("litbg")) {
   try { spot = new Spotlight($("litbg")); }
   catch (e) { console.warn("spotlight unavailable", e); $("litbg")?.remove(); }
 }
+if (spot) tick(() => updateWall());
 
 /* How strongly the wall shows, per section: the whole point of Featured Work, a quiet
    texture behind About and Contact, and absent on the hero where the portrait is the
@@ -169,6 +177,9 @@ if ($("litbg")) {
    IntersectionObserver picked whichever entry happened to be in the callback batch, so
    the hero leaving could set the strength even once Featured Work filled the screen. */
 const WALL = { top: 0, work: 1, about: .42, contact: .6 };
+/* Driven from the shared ticker rather than the scroll event. Four getBoundingClientRect
+   calls a frame is nothing, and it removes every question about when scroll fires, when
+   a programmatic jump settles, and whether an rAF guard is still latched. */
 const wallSections = Object.keys(WALL).map(id => [id, $(id)]).filter(([, el]) => el);
 function updateWall() {
   if (!spot) return;
