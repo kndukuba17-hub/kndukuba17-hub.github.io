@@ -61,10 +61,26 @@
 
   /* ===== HERO ===== */
   .hero{position:relative;height:100svh;min-height:640px;overflow:hidden;display:flex;align-items:center}
-  #bin{position:absolute;inset:0;width:100%;height:100%;z-index:1}
+  /* The portrait gets its own column on desktop. Previously the canvas was inset:0 and the
+     name and role marquee ran straight across Kaycee's face. */
+  /* An explicit width matters: with width:auto a canvas falls back to its width ATTRIBUTE,
+     which the renderer sets from clientWidth every resize - a loop that grows forever. */
+  #bin{position:absolute;top:0;right:0;bottom:0;left:auto;width:54%;height:100%;z-index:1}
   .hero .wrap{position:relative;z-index:3;width:100%;max-width:none}
+  .hero .hcol{max-width:min(52ch,46vw)}
+  .hero .hlede{color:var(--muted);font-size:clamp(1rem,1.45vw,1.22rem);line-height:1.5;
+    margin:16px 0 26px;max-width:40ch}
+  .hero .hlede b{color:var(--ink);font-weight:600}
+  .hero .hlede .pk{color:var(--pink)}
+  @media (max-width:900px){
+    #bin{width:100%;opacity:.40}
+    .hero .hcol{max-width:none}
+    .hero .hlede{max-width:34ch}
+  }
   .hero .role{margin-bottom:14px}
   .hero h1{font-size:clamp(3.4rem,13vw,10rem);margin:0}
+  /* on desktop the name has to stay inside its column or it runs over the portrait */
+  @media (min-width:901px){ .hero h1{font-size:clamp(3rem,6.6vw,7.2rem);line-height:.95} }
   .hname .ln{display:block}
   .hname .in{display:inline-block;transform:translateY(.42em);opacity:0;animation:nameup 1s cubic-bezier(.2,.85,.24,1) forwards}
   .hname .ln:nth-child(1) .in{animation-delay:.12s}
@@ -297,6 +313,34 @@
   .cvbtn2:hover{border-color:var(--pink);color:var(--pink)}
   @media (max-width:560px){.cvgrid2{grid-template-columns:1fr}.cvactions{flex-direction:column}.cvactions .cvgo,.cvactions .cvbtn2{width:100%;flex:none}}
   @media (pointer:coarse){.cvchip,.cvtab,.cvgo,.cvbtn2,.cvclose,button.cvbtn{cursor:pointer}}
+
+/* ---- Portfolio 2.0 ---------------------------------------------------------- */
+#field{position:fixed;inset:0;width:100vw;height:100vh;pointer-events:none;z-index:2;opacity:.9}
+.guide{position:fixed;right:clamp(14px,2.4vw,34px);bottom:clamp(14px,2.4vw,34px);z-index:60;
+  display:flex;align-items:flex-end;gap:10px;flex-direction:row-reverse}
+.guide-btn{appearance:none;border:1px solid rgba(255,46,136,.3);background:rgba(10,10,14,.72);
+  backdrop-filter:blur(8px);border-radius:50%;padding:0;cursor:pointer;display:grid;place-items:center;
+  width:92px;height:92px;transition:transform .5s cubic-bezier(.16,1,.3,1),border-color .3s,width .5s,height .5s;
+  overflow:hidden}
+.guide-btn:hover{transform:translateY(-3px) scale(1.04);border-color:var(--pink)}
+.guide-btn:focus-visible{outline:2px solid var(--pink);outline-offset:3px}
+.guide-btn canvas{display:block;opacity:0;transition:opacity .6s}
+.guide-btn canvas.is-ready{opacity:1}
+.guide.is-big .guide-btn{width:160px;height:160px}
+.guide-say{max-width:min(46ch,62vw);background:rgba(16,16,22,.94);border:1px solid rgba(255,46,136,.26);
+  border-radius:14px;padding:12px 15px;font-size:.92rem;line-height:1.45;color:var(--ink);
+  box-shadow:0 14px 40px rgba(0,0,0,.5);opacity:0;transform:translateY(6px);
+  transition:opacity .4s,transform .4s}
+.guide-say.in{opacity:1;transform:none}
+.guide-say b{color:var(--pink)}
+@media (max-width:620px){
+  .guide-btn{width:68px;height:68px}
+  .guide.is-big .guide-btn{width:104px;height:104px}
+  .guide-say{max-width:58vw;font-size:.84rem;padding:10px 12px}
+}
+@media (prefers-reduced-motion:reduce){
+  .guide-btn,.guide-say{transition:none}
+}
 </style>
 
 <div class="cur" id="cur"></div>
@@ -317,15 +361,19 @@
   <canvas id="bin" aria-hidden="true"></canvas>
   <img id="face" alt="Kaycee Ndukuba at graduation, rendered in binary" style="display:none" src="assets/kaycee-map.png">
   <div class="wrap">
+   <div class="hcol">
     <div class="role reveal in"><span class="ey">Applied Data Scientist · Behavioural AI</span></div>
     <h1 class="disp hname" aria-label="Kaycee Ndukuba"><span class="ln"><span class="in">KAYCEE</span></span><span class="ln"><span class="in b">NDUKUBA.</span></span></h1>
-    <div class="flow"><span class="t mono" id="flowt"></span></div>
+    <p class="hlede">Psychology taught me <b>how people think</b>. Data science taught me
+      <b>how to predict what they do</b>. Now I build <span class="pk">systems that turn insight
+      into action</span> &mdash; shipped, monitored, and explained in plain English.</p>
     <div class="hmeta">
       <span><b>MSc</b> Applied Data Science</span>
       <span><b>BSc</b> Psychology</span>
       <span class="pk">◆ Open to global relocation</span>
       <span>London, UK</span>
     </div>
+   </div>
   </div>
   <div class="scrollmouse" aria-hidden="true"><div class="m"></div><div class="ch">⌄</div></div>
 </header>
@@ -487,8 +535,6 @@
 var reduce=matchMedia("(prefers-reduced-motion: reduce)").matches, coarse=matchMedia("(pointer:coarse)").matches;
 
 /* ---------- flowing text + toolkit ---------- */
-var roles=["Applied Data Scientist","Behavioural AI","Machine Learning","NLP · LLMs · RAG","Predictive Analytics","AI / ML Engineer","Data Analyst"];
-document.getElementById("flowt").innerHTML=(function(){var s="";for(var k=0;k<2;k++){roles.forEach(function(r){s+="<b>"+r+"</b> <span class='d'>◆</span> ";});}return s;})();
 var tools=["Python","pandas","NumPy","scikit-learn","XGBoost","SHAP","SQL","PostgreSQL","BigQuery","LangChain","FAISS","PyTorch","TensorFlow","Docker","AWS","GCP","MLflow","Git","Matplotlib","Seaborn","Jupyter"];
 function tk(el){var s="";for(var k=0;k<2;k++){tools.forEach(function(t){s+="<span class='chip'>"+t+"</span>";});}el.innerHTML=s;}
 tk(document.getElementById("tk1")); tk(document.getElementById("tk2"));
@@ -921,5 +967,14 @@ var rt=null;addEventListener("resize",function(){if(!ready)return;clearTimeout(r
 })();
 </script>
 
+<!-- Portfolio 2.0 layers: edge formations and the character guide -->
+<canvas id="field" aria-hidden="true"></canvas>
+<div id="guide" class="guide" hidden>
+  <button class="guide-btn" id="guideBtn" aria-label="Kaycee's character guide. Activate to interact.">
+    <canvas id="miiCv" aria-hidden="true"></canvas>
+  </button>
+  <div class="guide-say" id="guideSay" role="status" aria-live="polite" hidden></div>
+</div>
+<script type="module" src="js/main.js?v=202611171248"></script>
 </body>
 </html>
