@@ -86,10 +86,14 @@ export class Morph {
     // ease toward the requested progress so a flicked scroll does not strobe
     const k = reduced() ? 1 : 1 - Math.exp(-0.011 * dt);
     this.p += (this.want - this.p) * k;
-    if (this.p < .002 && this.want === 0) {
+    // Once the characters have landed, or returned home, there is nothing left to draw.
+    // Without this the canvas repainted hundreds of fully transparent glyphs every frame
+    // for the whole of the rest of the page.
+    const settled = (this.p < .002 && this.want === 0) || (this.p > .999 && this.want === 1);
+    if (settled) {
       if (this._cleared) return;
       this.ctx.clearRect(0, 0, this.w, this.h); this._cleared = true;
-      this.onProgress(0); return;
+      this.onProgress(this.p); return;
     }
     this._cleared = false;
     if (!this.seeded && !this._seed()) return;

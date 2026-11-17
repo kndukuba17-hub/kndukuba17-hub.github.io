@@ -1,6 +1,6 @@
-/* The lit stage behind Featured Work.
+/* The lit pixel wall behind the whole page.
  *
- * A pixel wall that is almost black until the torch passes over it. The wall is painted
+ * A pixel wall that is almost black until the light passes over it. The wall is painted
  * once to an offscreen canvas; every frame only the lit disc is repainted, which is what
  * keeps this affordable - a full repaint would be tens of thousands of rects a frame.
  */
@@ -15,29 +15,26 @@ function vnoise(x, y) {
 }
 
 export class Spotlight {
-  constructor(canvas, host, torch) {
+  constructor(canvas) {
     this.cv = canvas; this.ctx = canvas.getContext("2d");
-    this.host = host; this.torch = torch;
     this.base = document.createElement("canvas");
     this.bx = this.base.getContext("2d");
     this.lx = 0; this.ly = 0; this.tx = 0; this.ty = 0;
     this.has = false; this.t = 0;
     this.radius = 300;
     this.resize();
-    this._ro = new ResizeObserver(() => this.resize());
-    this._ro.observe(host);
-    host.addEventListener("pointermove", e => {
-      const r = host.getBoundingClientRect();
-      this.tx = e.clientX - r.left; this.ty = e.clientY - r.top; this.has = true;
+    addEventListener("resize", () => this.resize(), { passive: true });
+    // the layer is fixed to the viewport, so pointer coordinates need no offset
+    addEventListener("pointermove", e => {
+      this.tx = e.clientX; this.ty = e.clientY; this.has = true;
     }, { passive: true });
-    host.addEventListener("pointerleave", () => { this.has = false; }, { passive: true });
+    document.addEventListener("pointerleave", () => { this.has = false; }, { passive: true });
     this.stop = tick(dt => this._frame(dt));
   }
 
   resize() {
     const dpr = Math.min(2, devicePixelRatio || 1);
-    const r = this.host.getBoundingClientRect();
-    this.w = Math.max(1, r.width); this.h = Math.max(1, r.height);
+    this.w = Math.max(1, innerWidth); this.h = Math.max(1, innerHeight);
     for (const c of [this.cv, this.base]) { c.width = this.w * dpr; c.height = this.h * dpr; }
     this.cv.style.width = this.w + "px"; this.cv.style.height = this.h + "px";
     this.ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
@@ -69,7 +66,7 @@ export class Spotlight {
 
   _frame(dt) {
     this.t += dt;
-    // when nobody is pointing, the torch drifts on its own so the stage is never dead
+    // when nobody is pointing, the light drifts on its own so the page is never dead
     if (!this.has) {
       this.tx = this.w * (.5 + .26 * Math.sin(this.t / 2600));
       this.ty = this.h * (.52 + .16 * Math.cos(this.t / 3100));
@@ -77,13 +74,6 @@ export class Spotlight {
     const k = reduced() ? 1 : 1 - Math.exp(-0.009 * dt);
     this.lx += (this.tx - this.lx) * k;
     this.ly += (this.ty - this.ly) * k;
-
-    if (this.torch) {
-      // the torch leans toward the light it is casting
-      const dx = (this.lx - this.w / 2) / this.w;
-      this.torch.style.transform =
-        `translate(calc(-50% + ${(dx * 190).toFixed(1)}px),0) rotate(${(dx * 13).toFixed(2)}deg)`;
-    }
 
     const ctx = this.ctx, cell = this.cell, s = cell * .86;
     ctx.clearRect(0, 0, this.w, this.h);
@@ -109,5 +99,5 @@ export class Spotlight {
     ctx.globalAlpha = 1;
   }
 
-  destroy() { this.stop?.(); this._ro?.disconnect(); }
+  destroy() { this.stop?.(); }
 }

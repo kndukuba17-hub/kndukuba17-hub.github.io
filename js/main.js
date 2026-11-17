@@ -3,12 +3,12 @@
  * Deliberately additive: the original site still renders and works if this module fails
  * to load or the browser cannot run it. Everything here is enhancement.
  */
-import { tick, clamp, reduced, coarse } from "./tokens.js?v=20261117133428";
-import { PixelField } from "./pixel-field.js?v=20261117133428";
-import { Mii } from "./mii.js?v=20261117133428";
-import { Morph } from "./morph.js?v=20261117133428";
-import { Spotlight } from "./spotlight.js?v=20261117133428";
-import { Gallery } from "./gallery.js?v=20261117133428";
+import { tick, clamp, reduced, coarse } from "./tokens.js?v=20261117135457";
+import { PixelField } from "./pixel-field.js?v=20261117135457";
+import { Mii } from "./mii.js?v=20261117135457";
+import { Morph } from "./morph.js?v=20261117135457";
+import { Spotlight } from "./spotlight.js?v=20261117135457";
+import { Gallery } from "./gallery.js?v=20261117135457";
 
 const $ = id => document.getElementById(id);
 
@@ -139,6 +139,8 @@ function onScroll() {
     // calm the edges down while reading the long project panels
     field?.setIntensity(p > .12 && p < .78 ? .55 : 1);
 
+    updateWall();
+
     // the handover runs across the back half of the hero
     if (morph && heroEl) {
       const h = heroEl.getBoundingClientRect();
@@ -156,10 +158,30 @@ if (reduced()) field?.setIntensity(.25);
 
 /* ------------------------------------------------- featured work: lit stage ---- */
 let spot = null, gallery = null;
-const litHost = $("litstage");
-if (litHost && $("litbg")) {
-  try { spot = new Spotlight($("litbg"), litHost, $("torch")); }
+if ($("litbg")) {
+  try { spot = new Spotlight($("litbg")); }
   catch (e) { console.warn("spotlight unavailable", e); $("litbg")?.remove(); }
+}
+
+/* How strongly the wall shows, per section: the whole point of Featured Work, a quiet
+   texture behind About and Contact, and absent on the hero where the portrait is the
+   subject. Whichever section holds the middle of the viewport wins - an
+   IntersectionObserver picked whichever entry happened to be in the callback batch, so
+   the hero leaving could set the strength even once Featured Work filled the screen. */
+const WALL = { top: 0, work: 1, about: .42, contact: .6 };
+const wallSections = Object.keys(WALL).map(id => [id, $(id)]).filter(([, el]) => el);
+function updateWall() {
+  if (!spot) return;
+  const mid = innerHeight / 2;
+  for (const [id, el] of wallSections) {
+    const r = el.getBoundingClientRect();
+    if (r.top <= mid && r.bottom >= mid) {
+      // written every time rather than deduped against a remembered section: the guard
+      // held a stale value and left the strength a section behind the scroll
+      $("litbg").style.opacity = String(WALL[id]);
+      return;
+    }
+  }
 }
 if ($("deck")) {
   gallery = new Gallery({

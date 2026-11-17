@@ -115,6 +115,17 @@ export class Gallery {
     this.cards.forEach(c => deck.appendChild(c));
     prev?.addEventListener("click", () => this.go(this.i - 1));
     next?.addEventListener("click", () => this.go(this.i + 1));
+    // the wheel also turns on a horizontal wheel gesture / shift+scroll
+    let wheelLock = 0;
+    deck.addEventListener("wheel", e => {
+      const dx = Math.abs(e.deltaX) > Math.abs(e.deltaY) ? e.deltaX : (e.shiftKey ? e.deltaY : 0);
+      if (!dx) return;
+      e.preventDefault();
+      const now = performance.now();
+      if (now < wheelLock) return;
+      wheelLock = now + 260;
+      this.go(this.i + (dx > 0 ? 1 : -1));
+    }, { passive: false });
     deck.addEventListener("keydown", e => {
       if (e.key === "ArrowLeft") { e.preventDefault(); this.go(this.i - 1); }
       else if (e.key === "ArrowRight") { e.preventDefault(); this.go(this.i + 1); }
@@ -147,16 +158,22 @@ export class Gallery {
     }, { passive: true });
   }
 
+  /* the deck is a wheel: past the last card you continue onto the first */
   go(n) {
-    this.i = clamp(n, 0, DECK.length - 1);
+    const len = DECK.length;
+    this.i = ((n % len) + len) % len;
     this.layout();
   }
 
   layout() {
     const narrow = innerWidth < 860;
     const step = narrow ? 92 : 148;            // how far each neighbour sits out
+    const len = DECK.length, half = len / 2;
     this.cards.forEach((c, idx) => {
-      const d = idx - this.i, ad = Math.abs(d);
+      // shortest signed distance around the wheel, so cards wrap to the near side
+      // instead of travelling the long way round when the deck turns over
+      const d = ((idx - this.i + half + len) % len) - half;
+      const ad = Math.abs(d);
       const vis = ad <= (narrow ? 2 : 3);
       c.style.display = vis ? "flex" : "none";
       if (!vis) return;

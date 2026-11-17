@@ -360,24 +360,15 @@
 .litstage{position:relative;min-height:100svh;display:flex;flex-direction:column;align-items:center;
   justify-content:center;overflow:hidden;isolation:isolate;
   padding:clamp(84px,11vh,118px) 16px clamp(34px,5vh,60px)}
-.litbg{position:absolute;inset:0;width:100%;height:100%;z-index:0;pointer-events:none}
+/* The lit pixel wall is a fixed layer for the whole page, not just this section.
+   Its strength is set per section so it never fights the hero portrait or body copy. */
+#litbg{position:fixed;inset:0;width:100vw;height:100vh;z-index:0;pointer-events:none;
+  opacity:0;transition:opacity .9s cubic-bezier(.16,1,.3,1)}
 .lithead{position:relative;z-index:3;text-align:center;max-width:52ch;margin-bottom:clamp(14px,2.4vh,30px)}
 .lithead .ey{margin:0 0 14px}
 .lithead h2{font-size:clamp(1.9rem,5.1vw,3.8rem);line-height:.98;margin:0;letter-spacing:-.02em;
   text-shadow:0 0 44px rgba(255,46,136,.28)}
-.litsub{color:var(--muted);font-size:.92rem;max-width:44ch;margin:14px auto 0}
-
-/* torch: hangs above, drifts, and is the thing the light comes from */
-.torch{position:absolute;top:clamp(48px,6.5vh,74px);left:50%;z-index:4;width:16px;pointer-events:none;
-  transform:translate(-50%,0);transition:transform .35s cubic-bezier(.16,1,.3,1)}
-.torch .stick{display:block;width:10px;height:clamp(54px,9vh,92px);margin:0 auto;
-  background:linear-gradient(180deg,#3a2a24,#241a16);border-radius:0 0 3px 3px}
-.torch .flame{display:block;width:16px;height:16px;margin:0 auto -4px;border-radius:50%;
-  background:var(--pink);box-shadow:0 0 18px 6px rgba(255,46,136,.55),0 0 46px 18px rgba(255,46,136,.22);
-  animation:flicker 1.6s ease-in-out infinite}
-@keyframes flicker{0%,100%{transform:scale(1);opacity:1}
-  40%{transform:scale(1.18) translateY(-2px);opacity:.88}
-  70%{transform:scale(.92);opacity:.96}}
+.litsub{color:var(--muted);font-size:.92rem;max-width:52ch;margin:14px auto 0;line-height:1.55}
 
 /* the deck */
 .deck{position:relative;z-index:3;width:100%;max-width:1180px;height:clamp(300px,40vh,420px);
@@ -436,7 +427,7 @@
   .deckarrow.prev{left:2px} .deckarrow.next{right:2px}
 }
 @media (prefers-reduced-motion:reduce){
-  .card{transition:none}.torch .flame{animation:none}.pdet-card{animation:none}
+  .card{transition:none}.pdet-card{animation:none}
 }
 </style>
 
@@ -471,13 +462,12 @@
 <!-- WORK -->
 <section class="work" id="work">
   <div class="litstage" id="litstage">
-    <canvas class="litbg" id="litbg" aria-hidden="true"></canvas>
-    <div class="torch" id="torch" aria-hidden="true"><span class="flame"></span><span class="stick"></span></div>
     <div class="lithead">
       <p class="ey">Kaycee Ndukuba / Selected Work / 2026</p>
       <h2 class="disp">WORK, BROUGHT<br>TO LIGHT</h2>
-      <p class="litsub">Move the light. Every project here runs on real data &mdash;
-        open one to see what it does and why it matters.</p>
+      <p class="litsub">Not just things I&rsquo;ve built, but ideas brought to life. A collection of
+        experiments, projects and solutions exploring the intersection of technology,
+        intelligence and creativity.</p>
     </div>
     <div class="deck" id="deck" role="listbox" aria-label="Selected projects" tabindex="0"></div>
     <button class="deckarrow prev" id="deckPrev" aria-label="Previous project">&laquo;</button>
@@ -1073,6 +1063,7 @@ var rt=null;addEventListener("resize",function(){if(!ready)return;clearTimeout(r
 </script>
 
 <!-- Portfolio 2.0 layers: edge formations and the character guide -->
+<canvas id="litbg" aria-hidden="true"></canvas>
 <canvas id="field" aria-hidden="true"></canvas>
 <canvas id="morph" aria-hidden="true"></canvas>
 <div class="pdet" id="pdet" role="dialog" aria-modal="true" aria-label="Project detail">
@@ -1085,6 +1076,6 @@ var rt=null;addEventListener("resize",function(){if(!ready)return;clearTimeout(r
   </button>
   <div class="guide-say" id="guideSay" role="status" aria-live="polite" hidden></div>
 </div>
-<script type="module" src="js/main.js?v=20261117133428"></script>
+<script type="module" src="js/main.js?v=20261117135457"></script>
 </body>
 </html>
