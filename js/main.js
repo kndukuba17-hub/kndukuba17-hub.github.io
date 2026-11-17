@@ -3,10 +3,12 @@
  * Deliberately additive: the original site still renders and works if this module fails
  * to load or the browser cannot run it. Everything here is enhancement.
  */
-import { tick, clamp, reduced, coarse } from "./tokens.js?v=202611171310";
-import { PixelField } from "./pixel-field.js?v=202611171310";
-import { Mii } from "./mii.js?v=202611171310";
-import { Morph } from "./morph.js?v=202611171310";
+import { tick, clamp, reduced, coarse } from "./tokens.js?v=20261117133428";
+import { PixelField } from "./pixel-field.js?v=20261117133428";
+import { Mii } from "./mii.js?v=20261117133428";
+import { Morph } from "./morph.js?v=20261117133428";
+import { Spotlight } from "./spotlight.js?v=20261117133428";
+import { Gallery } from "./gallery.js?v=20261117133428";
 
 const $ = id => document.getElementById(id);
 
@@ -152,5 +154,30 @@ onScroll();
 /* reduced motion: keep the character, drop the ambient movement ---------------- */
 if (reduced()) field?.setIntensity(.25);
 
+/* ------------------------------------------------- featured work: lit stage ---- */
+let spot = null, gallery = null;
+const litHost = $("litstage");
+if (litHost && $("litbg")) {
+  try { spot = new Spotlight($("litbg"), litHost, $("torch")); }
+  catch (e) { console.warn("spotlight unavailable", e); $("litbg")?.remove(); }
+}
+if ($("deck")) {
+  gallery = new Gallery({
+    deck: $("deck"), prev: $("deckPrev"), next: $("deckNext"), hint: $("deckHint"),
+    panelsHost: $("panels"), overlay: $("pdet"),
+  });
+  // the character points toward whichever card has focus
+  gallery.onChange = i => {
+    if (!mii) return;
+    const mid = (gallery.cards.length - 1) / 2;
+    mii.pointAt(clamp((i - mid) / mid, -1, 1));
+  };
+  $("pdetClose")?.addEventListener("click", () => gallery.close());
+  $("pdet")?.addEventListener("click", e => { if (e.target === $("pdet")) gallery.close(); });
+  addEventListener("keydown", e => {
+    if (e.key === "Escape" && $("pdet").classList.contains("open")) gallery.close();
+  });
+}
+
 /* expose for testing */
-window.__p2 = { field, mii, speak, morph };
+window.__p2 = { field, mii, speak, morph, spot, gallery };
