@@ -65,7 +65,13 @@
      name and role marquee ran straight across Kaycee's face. */
   /* An explicit width matters: with width:auto a canvas falls back to its width ATTRIBUTE,
      which the renderer sets from clientWidth every resize - a loop that grows forever. */
-  #bin{position:absolute;top:0;right:0;bottom:0;left:auto;width:54%;height:100%;z-index:1}
+  #bin{position:absolute;top:0;right:0;bottom:0;left:auto;width:54%;height:100%;z-index:1;
+    will-change:transform;animation:heroBreathe 11s ease-in-out infinite}
+  @keyframes heroBreathe{
+    0%,100%{transform:translate3d(0,0,0) scale(1)}
+    50%{transform:translate3d(0,-7px,0) scale(1.012)}
+  }
+  @media (prefers-reduced-motion:reduce){ #bin{animation:none} }
   .hero .wrap{position:relative;z-index:3;width:100%;max-width:none}
   .hero .hcol{max-width:min(52ch,46vw)}
   .hero .hlede{color:var(--muted);font-size:clamp(1rem,1.45vw,1.22rem);line-height:1.5;
@@ -316,6 +322,14 @@
 
 /* ---- Portfolio 2.0 ---------------------------------------------------------- */
 #field{position:fixed;inset:0;width:100vw;height:100vh;pointer-events:none;z-index:2;opacity:.9}
+#morph{position:fixed;inset:0;width:100vw;height:100vh;pointer-events:none;z-index:58}
+/* the bubble is absent on the landing section and materialises as the characters land */
+.guide{--form:0}
+.guide.is-forming{pointer-events:none}
+.guide.is-forming .guide-btn{opacity:var(--form);transform:scale(calc(.55 + .45 * var(--form)));
+  border-color:rgba(255,46,136,calc(.3 * var(--form)))}
+.guide .guide-btn{opacity:1;transition:opacity .25s linear}
+.guide.is-forming .guide-say{display:none}
 .guide{position:fixed;right:clamp(14px,2.4vw,34px);bottom:clamp(14px,2.4vw,34px);z-index:60;
   display:flex;align-items:flex-end;gap:10px;flex-direction:row-reverse}
 .guide-btn{appearance:none;border:1px solid rgba(255,46,136,.3);background:rgba(10,10,14,.72);
@@ -364,14 +378,8 @@
    <div class="hcol">
     <div class="role reveal in"><span class="ey">Applied Data Scientist · Behavioural AI</span></div>
     <h1 class="disp hname" aria-label="Kaycee Ndukuba"><span class="ln"><span class="in">KAYCEE</span></span><span class="ln"><span class="in b">NDUKUBA.</span></span></h1>
-    <p class="hlede">Psychology taught me <b>how people think</b>. Data science taught me
-      <b>how to predict what they do</b>. Now I build <span class="pk">systems that turn insight
-      into action</span> &mdash; shipped, monitored, and explained in plain English.</p>
     <div class="hmeta">
-      <span><b>MSc</b> Applied Data Science</span>
-      <span><b>BSc</b> Psychology</span>
       <span class="pk">◆ Open to global relocation</span>
-      <span>London, UK</span>
     </div>
    </div>
   </div>
@@ -693,13 +701,17 @@ function sampleFace(){
   // CONTAIN (not cover) so the mortarboard is never cropped
   if(narrow){
     // phones: portrait sits in the upper band, centred, and STOPS well clear of the type
-    var rwN=cols,rhN=rows*0.46;
-    scale=Math.min(rwN/iw,rhN/ih)*0.98; dw=iw*scale; dh=ih*scale;
-    dx=(cols-dw)/2; dy=rows*0.12;   // clear the fixed nav so the mortarboard isn't clipped
+    // Fill the upper band properly: at 0.46 the portrait sat small with a dead strip
+    // between it and the type. It still stops clear of the name block below.
+    var rwN=cols*0.98,rhN=rows*0.58;
+    scale=Math.min(rwN/iw,rhN/ih); dw=iw*scale; dh=ih*scale;
+    dx=(cols-dw)/2; dy=rows*0.075;  // clear the fixed nav so the mortarboard isn't clipped
   }else{
-    var startC=Math.floor(cols*0.38),rw=cols-startC,rh=rows;
-    scale=Math.min(rw/iw,rh/ih)*0.99; dw=iw*scale; dh=ih*scale;
-    dx=startC+(rw-dw)*0.62; dy=(rh-dh)/2;
+    // The canvas is its own column now, so the portrait gets the whole of it. It used to
+    // start at 38% to leave room for the name, which left it filling ~a third of the
+    // viewport and reading small on wide screens.
+    scale=Math.min(cols/iw,rows/ih)*0.96; dw=iw*scale; dh=ih*scale;
+    dx=(cols-dw)/2; dy=(rows-dh)/2;
   }
   ox.drawImage(face,dx,dy,dw,dh);
   var d;try{d=ox.getImageData(0,0,cols,rows).data;}catch(e){return;}
@@ -969,12 +981,13 @@ var rt=null;addEventListener("resize",function(){if(!ready)return;clearTimeout(r
 
 <!-- Portfolio 2.0 layers: edge formations and the character guide -->
 <canvas id="field" aria-hidden="true"></canvas>
+<canvas id="morph" aria-hidden="true"></canvas>
 <div id="guide" class="guide" hidden>
   <button class="guide-btn" id="guideBtn" aria-label="Kaycee's character guide. Activate to interact.">
     <canvas id="miiCv" aria-hidden="true"></canvas>
   </button>
   <div class="guide-say" id="guideSay" role="status" aria-live="polite" hidden></div>
 </div>
-<script type="module" src="js/main.js?v=202611171248"></script>
+<script type="module" src="js/main.js?v=202611171310"></script>
 </body>
 </html>

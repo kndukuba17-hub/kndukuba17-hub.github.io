@@ -3,9 +3,10 @@
  * Deliberately additive: the original site still renders and works if this module fails
  * to load or the browser cannot run it. Everything here is enhancement.
  */
-import { tick, clamp, reduced, coarse } from "./tokens.js?v=202611171248";
-import { PixelField } from "./pixel-field.js?v=202611171248";
-import { Mii } from "./mii.js?v=202611171248";
+import { tick, clamp, reduced, coarse } from "./tokens.js?v=202611171310";
+import { PixelField } from "./pixel-field.js?v=202611171310";
+import { Mii } from "./mii.js?v=202611171310";
+import { Morph } from "./morph.js?v=202611171310";
 
 const $ = id => document.getElementById(id);
 
@@ -28,6 +29,7 @@ function sizeMii() {
 if (guide && cv) {
   mii = new Mii(cv, { crop: "bust", sleepAfter: 24000 });
   guide.hidden = false;
+  guide.classList.add("is-forming");   // invisible until the portrait hands it over
   sizeMii();
   addEventListener("resize", sizeMii, { passive: true });
   // the canvas only reports a size once layout has run
@@ -104,6 +106,25 @@ document.querySelectorAll('a[href="#contact"]').forEach(a => {
   });
 });
 
+/* ------------------------------------------- hero portrait → character bubble ---- */
+const heroEl = $("top"), binEl = $("bin"), morphCv = $("morph");
+let morph = null;
+if (heroEl && binEl && morphCv && btn) {
+  morph = new Morph({
+    canvas: morphCv, source: binEl, target: btn,
+    onProgress: p => {
+      // the character only becomes solid once the characters have arrived
+      guide.style.setProperty("--form", p.toFixed(3));
+      guide.classList.toggle("is-forming", p < .98);
+      if (p > .9 && !guide.dataset.arrived) {
+        guide.dataset.arrived = "1";
+        mii?.set("waking", 900);
+        field?.burst(12);
+      } else if (p < .4) delete guide.dataset.arrived;
+    },
+  });
+}
+
 /* -------------------------------------------------- scroll → field progress ---- */
 let ticking = false;
 function onScroll() {
@@ -115,6 +136,13 @@ function onScroll() {
     field?.setProgress(p);
     // calm the edges down while reading the long project panels
     field?.setIntensity(p > .12 && p < .78 ? .55 : 1);
+
+    // the handover runs across the back half of the hero
+    if (morph && heroEl) {
+      const h = heroEl.getBoundingClientRect();
+      const gone = clamp((-h.top) / Math.max(1, h.height * .62), 0, 1);
+      morph.setProgress(gone);
+    }
     ticking = false;
   });
 }
@@ -125,4 +153,4 @@ onScroll();
 if (reduced()) field?.setIntensity(.25);
 
 /* expose for testing */
-window.__p2 = { field, mii, speak };
+window.__p2 = { field, mii, speak, morph };
