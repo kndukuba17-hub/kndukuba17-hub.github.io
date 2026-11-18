@@ -3,12 +3,13 @@
  * Deliberately additive: the original site still renders and works if this module fails
  * to load or the browser cannot run it. Everything here is enhancement.
  */
-import { tick, clamp, reduced, coarse } from "./tokens.js?v=20261117140108";
-import { PixelField } from "./pixel-field.js?v=20261117140108";
-import { Mii } from "./mii.js?v=20261117140108";
-import { Morph } from "./morph.js?v=20261117140108";
-import { Spotlight } from "./spotlight.js?v=20261117140108";
-import { Gallery } from "./gallery.js?v=20261117140108";
+import { tick, clamp, reduced, coarse } from "./tokens.js?v=20261118120018";
+import { PixelField } from "./pixel-field.js?v=20261118120018";
+import { Mii } from "./mii.js?v=20261118120018";
+import { Morph } from "./morph.js?v=20261118120018";
+import { Spotlight } from "./spotlight.js?v=20261118120018";
+import { Gallery } from "./gallery.js?v=20261118120018";
+import { AboutStory } from "./about.js?v=20261118120018";
 
 const $ = id => document.getElementById(id);
 
@@ -212,5 +213,27 @@ if ($("deck")) {
   });
 }
 
+/* ----------------------------------------------- about: the pinned narrative ---- */
+let story = null, abMii = null;
+const abStage = $("abstage");
+if (abStage && $("abMii")) {
+  abMii = new Mii($("abMii"), { crop: "bust", sleepAfter: 9e9 });  // he is on duty here
+  const sizeAb = () => {
+    const px = Math.round(Math.min(innerWidth * .62, innerHeight * .38, 420));
+    abMii.resize(Math.max(170, px));
+  };
+  sizeAb();
+  addEventListener("resize", sizeAb, { passive: true });
+  requestAnimationFrame(sizeAb);
+  setTimeout(sizeAb, 400);
+
+  story = new AboutStory({
+    stage: abStage, bubble: $("abBubble"), dots: $("abDots"), mii: abMii,
+    // one character at a time: the floating guide stands down while the big one talks
+    onBeat: i => guide?.classList.toggle("is-hidden", i >= 0),
+  });
+  tick(() => story.update());
+}
+
 /* expose for testing */
-window.__p2 = { field, mii, speak, morph, spot, gallery };
+window.__p2 = { field, mii, speak, morph, spot, gallery, story, abMii };
