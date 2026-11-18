@@ -6,7 +6,7 @@
  * drawn over the measured feature boxes, which is what makes expressions possible from a
  * single still image - no sprite sheet, no generated frames that could drift off-model.
  */
-import { C, tick, lerp, clamp, approach, reduced } from "./tokens.js?v=20261118154339";
+import { C, tick, lerp, clamp, approach, reduced } from "./tokens.js?v=20261118155052";
 
 const STATES = {
   idle:       { eye: "open",   mouth: "smile",  bob: 1.0, pri: 0 },
@@ -112,8 +112,10 @@ export class Mii {
       // The face tone painted over the feature boxes: the panel under the eyes and above
       // the mouth. Measured at ~0.69 against 0.46 for the cheeks beside the eyes, which
       // reach into the hair, and against a nose sample that catches its shadow.
-      // the tone used to cover a feature when we do replace it: cheek, beside the eyes
-      if (!f && v > EL[1] && v < EL[3] && (u < EL[0] - .02 || u > ER[2] + .02)) skin.push(t);
+      // The tone used to cover a feature when we replace it. Sampled from the cheek panel
+      // below the eyes: taking it from beside the eyes caught the temples and hair and
+      // came back at 0.45 against the cheeks' 0.70, which drew a dark box behind each eye.
+      if (!f && u > EL[0] && u < ER[2] && v > EL[3] + .02 && v < MO[1] - .02) skin.push(t);
     }
     skin.sort((a, b) => a - b);
     this.grid = { cols, rows, cells, cell,
