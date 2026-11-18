@@ -4,7 +4,7 @@
  * once to an offscreen canvas; every frame only the lit disc is repainted, which is what
  * keeps this affordable - a full repaint would be tens of thousands of rects a frame.
  */
-import { C, tick, clamp, lerp, reduced } from "./tokens.js?v=20261118180005";
+import { C, tick, clamp, lerp, reduced } from "./tokens.js?v=20261118191940";
 
 const hash = (x, y) => { const s = Math.sin(x * 127.1 + y * 311.7) * 43758.5453; return s - Math.floor(s); };
 function vnoise(x, y) {

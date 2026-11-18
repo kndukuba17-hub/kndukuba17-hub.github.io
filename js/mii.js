@@ -6,7 +6,7 @@
  * drawn over the measured feature boxes, which is what makes expressions possible from a
  * single still image - no sprite sheet, no generated frames that could drift off-model.
  */
-import { C, tick, lerp, clamp, approach, reduced } from "./tokens.js?v=20261118180005";
+import { C, tick, lerp, clamp, approach, reduced } from "./tokens.js?v=20261118191940";
 
 const STATES = {
   idle:       { eye: "open",   mouth: "smile",  bob: 1.0, pri: 0 },

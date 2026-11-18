@@ -3,13 +3,13 @@
  * Deliberately additive: the original site still renders and works if this module fails
  * to load or the browser cannot run it. Everything here is enhancement.
  */
-import { tick, clamp, reduced, coarse } from "./tokens.js?v=20261118180005";
-import { PixelField } from "./pixel-field.js?v=20261118180005";
-import { Mii } from "./mii.js?v=20261118180005";
-import { Morph } from "./morph.js?v=20261118180005";
-import { Spotlight } from "./spotlight.js?v=20261118180005";
-import { Gallery } from "./gallery.js?v=20261118180005";
-import { AboutStory } from "./about.js?v=20261118180005";
+import { tick, clamp, reduced, coarse } from "./tokens.js?v=20261118191940";
+import { PixelField } from "./pixel-field.js?v=20261118191940";
+import { Mii } from "./mii.js?v=20261118191940";
+import { Morph } from "./morph.js?v=20261118191940";
+import { Spotlight } from "./spotlight.js?v=20261118191940";
+import { Gallery } from "./gallery.js?v=20261118191940";
+import { AboutStory } from "./about.js?v=20261118191940";
 
 const $ = id => document.getElementById(id);
 
@@ -118,7 +118,17 @@ const heroEl = $("top"), binEl = $("bin"), morphCv = $("morph");
 let morph = null;
 if (heroEl && binEl && morphCv && btn) {
   morph = new Morph({
-    canvas: morphCv, source: binEl, target: btn,
+    canvas: morphCv, source: binEl,
+    // land on whichever character is on screen: the big About one once its stage is up,
+    // otherwise the floating guide
+    target: () => {
+      const ab = $("abMii"), st = $("abstage");
+      if (ab && st) {
+        const r = st.getBoundingClientRect();
+        if (r.top < innerHeight * .75 && r.bottom > 0) return ab;
+      }
+      return btn;
+    },
     onProgress: p => {
       // the character only becomes solid once the characters have arrived
       guide.style.setProperty("--form", p.toFixed(3));

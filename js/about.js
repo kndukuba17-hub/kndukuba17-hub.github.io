@@ -7,10 +7,10 @@
  * Every word here is Kaycee's own, lifted from the About copy below - this retells it,
  * it does not invent a second version of him.
  */
-import { clamp, reduced } from "./tokens.js?v=20261118180005";
+import { clamp, reduced } from "./tokens.js?v=20261118191940";
 
 export const BEATS = [
-  { t: `Hi, I&rsquo;m Kaycee!<span class="small">02 / About</span>`, s: "excited" },
+  { t: `Hi, I&rsquo;m Kaycee!`, s: "excited" },
   { t: `A curious mind, a creative thinker and someone who&rsquo;s <b>always building something</b>.`, s: "attentive" },
   { t: `Psychology taught me to understand the <b>why</b> behind human behaviour and decision-making.`, s: "talking" },
   { t: `Data Science took that further &mdash; teaching me how to uncover patterns, extract meaning from
@@ -40,7 +40,8 @@ export class AboutStory {
       this.dots = [...dots.children];
     }
     // the stage needs room for every beat to get its own scroll band
-    stage.style.height = `${BEATS.length * 62 + 40}svh`;
+    // 62svh a beat left long empty stretches between lines
+    stage.style.height = `${BEATS.length * 46 + 30}svh`;
   }
 
   /* progress through the stage, 0 before it, 1 after */

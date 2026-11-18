@@ -6,7 +6,7 @@
  * it plays in reverse, so the character always comes from the picture rather than just
  * appearing.
  */
-import { C, tick, clamp, reduced } from "./tokens.js?v=20261118180005";
+import { C, tick, clamp, reduced } from "./tokens.js?v=20261118191940";
 
 const glyph = () => (Math.random() < .5 ? "0" : "1");
 
@@ -15,7 +15,9 @@ export class Morph {
     this.cv = canvas;
     this.ctx = canvas.getContext("2d");
     this.source = source;            // the hero <canvas>
-    this.target = target;            // the bubble element
+    // A function, not an element: since About sits straight after the hero the pixels
+    // should land on whichever character is actually on screen, and that target moves.
+    this.targetAt = typeof target === "function" ? target : () => target;
     this.onProgress = onProgress || (() => {});
     this.p = 0;                      // 0 = in the portrait, 1 = landed in the bubble
     this.want = 0;
@@ -62,18 +64,16 @@ export class Morph {
     const stride = Math.max(1, Math.floor(pts.length / want));
     for (let i = 0; i < pts.length; i += stride) keep.push(pts[i]);
 
-    const t = this.target.getBoundingClientRect();
-    const tx = t.left + t.width / 2, ty = t.top + t.height / 2;
+    // Offsets, not absolute points: the landing spot is resolved every frame so the
+    // swarm follows the character even as the sticky About stage moves it.
     this.parts = keep.map(([x, y], i) => {
-      const a = Math.random() * Math.PI * 2, rr = Math.random() * t.width * .34;
+      const a = Math.random() * Math.PI * 2, rr = Math.random();
       return {
         x0: x, y0: y,
-        x1: tx + Math.cos(a) * rr, y1: ty + Math.sin(a) * rr,
-        // a control point off to one side turns the straight line into an arc
-        cx: (x + tx) / 2 + (Math.random() - .5) * 260,
-        cy: (y + ty) / 2 + (Math.random() - .5) * 200,
+        ox: Math.cos(a) * rr * .34, oy: Math.sin(a) * rr * .34,
+        bend: (Math.random() - .5),      // how far the arc bows out
         d: (i % 11) / 11 * .22,          // staggered departure
-        g: glyph(), sw: 0.5 + Math.random() * 0.9,
+        g: glyph(),
       };
     });
     this.seeded = true;
@@ -103,15 +103,21 @@ export class Morph {
     ctx.font = "700 11px 'SF Mono',ui-monospace,Menlo,monospace";
     ctx.textAlign = "center"; ctx.textBaseline = "middle";
 
+    const t = this.targetAt()?.getBoundingClientRect();
+    if (!t || t.width < 4) return;
+    const tcx = t.left + t.width / 2, tcy = t.top + t.height / 2;
+
     for (const q of this.parts) {
       // each particle runs its own window of the global progress
       const u = clamp((this.p - q.d) / (1 - q.d), 0, 1);
       if (u <= 0) continue;
       const e = u < .5 ? 2 * u * u : 1 - Math.pow(-2 * u + 2, 2) / 2;
       const m = 1 - e;
-      // quadratic bezier: portrait -> control -> bubble
-      const x = m * m * q.x0 + 2 * m * e * q.cx + e * e * q.x1;
-      const y = m * m * q.y0 + 2 * m * e * q.cy + e * e * q.y1;
+      const x1 = tcx + q.ox * t.width, y1 = tcy + q.oy * t.height;
+      const cx = (q.x0 + x1) / 2 + q.bend * 260, cy = (q.y0 + y1) / 2 + q.bend * 200;
+      // quadratic bezier: portrait -> control -> character
+      const x = m * m * q.x0 + 2 * m * e * cx + e * e * x1;
+      const y = m * m * q.y0 + 2 * m * e * cy + e * e * y1;
       // brightest in flight, fading as they land so the Mii can take over
       const a = e < .12 ? e / .12 : e > .86 ? (1 - e) / .14 : 1;
       ctx.globalAlpha = clamp(a, 0, 1) * .95;
