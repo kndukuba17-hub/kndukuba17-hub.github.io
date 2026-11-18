@@ -3,13 +3,13 @@
  * Deliberately additive: the original site still renders and works if this module fails
  * to load or the browser cannot run it. Everything here is enhancement.
  */
-import { tick, clamp, reduced, coarse } from "./tokens.js?v=20261118193007";
-import { PixelField } from "./pixel-field.js?v=20261118193007";
-import { Mii } from "./mii.js?v=20261118193007";
-import { Morph } from "./morph.js?v=20261118193007";
-import { Spotlight } from "./spotlight.js?v=20261118193007";
-import { Gallery } from "./gallery.js?v=20261118193007";
-import { AboutStory } from "./about.js?v=20261118193007";
+import { tick, clamp, reduced, coarse } from "./tokens.js?v=20261118193802";
+import { PixelField } from "./pixel-field.js?v=20261118193802";
+import { Mii } from "./mii.js?v=20261118193802";
+import { Morph } from "./morph.js?v=20261118193802";
+import { Spotlight } from "./spotlight.js?v=20261118193802";
+import { Gallery } from "./gallery.js?v=20261118193802";
+import { AboutStory } from "./about.js?v=20261118193802";
 
 const $ = id => document.getElementById(id);
 
@@ -130,6 +130,11 @@ if (heroEl && binEl && morphCv && btn) {
       return btn;
     },
     onProgress: p => {
+      // The portrait comes apart as its characters leave, and the hero type lifts with
+      // it, so the handover is one continuous movement rather than a copy flying off an
+      // intact picture.
+      window.__heroDissolve = p;
+      heroEl.style.setProperty("--gone", p.toFixed(3));
       // the character only becomes solid once the characters have arrived
       guide.style.setProperty("--form", p.toFixed(3));
       guide.classList.toggle("is-forming", p < .98);

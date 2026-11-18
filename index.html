@@ -69,13 +69,20 @@
      An explicit width still matters: with width:auto a canvas falls back to its width
      ATTRIBUTE, which the renderer sets from clientWidth every resize - a loop that grows. */
   #bin{position:absolute;inset:0;width:100%;height:100%;z-index:1;
-    will-change:transform;animation:heroBreathe 11s ease-in-out infinite}
+    will-change:transform;animation:heroBreathe 11s ease-in-out infinite;
+    /* the canvas used to stop on a hard line at the hero's edge, which showed as a band
+       across the top of the next section - fade it out instead */
+    -webkit-mask-image:linear-gradient(180deg,#000 0,#000 62%,rgba(0,0,0,.45) 84%,transparent 100%);
+    mask-image:linear-gradient(180deg,#000 0,#000 62%,rgba(0,0,0,.45) 84%,transparent 100%)}
   @keyframes heroBreathe{
     0%,100%{transform:translate3d(0,0,0) scale(1)}
     50%{transform:translate3d(0,-7px,0) scale(1.012)}
   }
   @media (prefers-reduced-motion:reduce){ #bin{animation:none} }
-  .hero .wrap{position:relative;z-index:3;width:100%;max-width:none}
+  .hero .wrap{position:relative;z-index:3;width:100%;max-width:none;
+    /* driven by the handover so the type leaves with the portrait */
+    opacity:calc(1 - var(--gone,0) * .85);
+    transform:translate3d(0,calc(var(--gone,0) * -34px),0)}
   .hero .hcol{max-width:min(52ch,46vw)}
   .hero .hlede{color:var(--muted);font-size:clamp(1rem,1.45vw,1.22rem);line-height:1.5;
     margin:16px 0 26px;max-width:40ch}
@@ -863,7 +870,23 @@ function frame(){
   x.clearRect(0,0,W,H);
   // the base canvas is empty until the first size()/buildBase(); drawing a 0x0 canvas throws
   if(!base.width||!base.height){rafH=requestAnimationFrame(frame);return;}
+  // The handover sets this 0..1. The portrait has to come APART as the characters fly
+  // off it - leaving it intact made the morph read as a copy rather than a transformation.
+  var dis=+(window.__heroDissolve||0);
+  x.globalAlpha=1-dis*0.82;
   x.drawImage(base,0,0,W,H);
+  x.globalAlpha=1;
+  if(dis>0.01){
+    // punch out whole blocks on a stable per-block threshold, so cells stay gone instead
+    // of flickering, and the cost stays in the low thousands rather than per-cell
+    var BS=cell*7, bc=Math.ceil(W/BS), br=Math.ceil(H/BS);
+    for(var by=0;by<br;by++)for(var bx=0;bx<bc;bx++){
+      var hsh=Math.sin((bx*12.9898+by*78.233))*43758.5453; hsh-=Math.floor(hsh);
+      // the lower edge goes first, so the figure drains downward into the next section
+      var bias=0.72+0.56*(by/Math.max(1,br-1));
+      if(hsh<dis*bias) x.clearRect(bx*BS,by*BS,BS,BS);
+    }
+  }
   x.font=FONT;x.textAlign="center";x.textBaseline="middle";
   // 1. living shimmer: swap a scattered handful of characters every frame
   for(var k=0;k<FLICK;k++){
@@ -966,6 +989,6 @@ var rt=null;addEventListener("resize",function(){if(!ready)return;clearTimeout(r
   </button>
   <div class="guide-say" id="guideSay" role="status" aria-live="polite" hidden></div>
 </div>
-<script type="module" src="js/main.js?v=20261118193007"></script>
+<script type="module" src="js/main.js?v=20261118193802"></script>
 </body>
 </html>

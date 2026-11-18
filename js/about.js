@@ -7,7 +7,7 @@
  * Every word here is Kaycee's own, lifted from the About copy below - this retells it,
  * it does not invent a second version of him.
  */
-import { clamp, reduced } from "./tokens.js?v=20261118193007";
+import { clamp, reduced } from "./tokens.js?v=20261118193802";
 
 export const BEATS = [
   { t: `Hi, I&rsquo;m Kaycee!`, s: "excited" },
