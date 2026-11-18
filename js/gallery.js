@@ -8,7 +8,7 @@
  * Opening a card clones the matching panel the page already builds, so every figure and
  * chart in the detail view is the real one, not a second copy that could drift.
  */
-import { C, tick, clamp, reduced } from "./tokens.js?v=20261118153621";
+import { C, tick, clamp, reduced } from "./tokens.js?v=20261118154339";
 
 /* panel = index into the existing #panels list; null means there is no panel yet */
 export const DECK = [

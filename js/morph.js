@@ -6,7 +6,7 @@
  * it plays in reverse, so the character always comes from the picture rather than just
  * appearing.
  */
-import { C, tick, clamp, reduced } from "./tokens.js?v=20261118153621";
+import { C, tick, clamp, reduced } from "./tokens.js?v=20261118154339";
 
 const glyph = () => (Math.random() < .5 ? "0" : "1");
 

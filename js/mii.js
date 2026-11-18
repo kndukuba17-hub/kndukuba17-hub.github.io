@@ -6,7 +6,7 @@
  * drawn over the measured feature boxes, which is what makes expressions possible from a
  * single still image - no sprite sheet, no generated frames that could drift off-model.
  */
-import { C, tick, lerp, clamp, approach, reduced } from "./tokens.js?v=20261118153621";
+import { C, tick, lerp, clamp, approach, reduced } from "./tokens.js?v=20261118154339";
 
 const STATES = {
   idle:       { eye: "open",   mouth: "smile",  bob: 1.0, pri: 0 },
@@ -90,17 +90,16 @@ export class Mii {
     this.win = win;
     const d = o.getImageData(0, 0, cols, rows).data;
 
-    /* Masking features one box at a time left remnants of the originals - stray brow
-       ends, the nose shadow, hair fringe - which read as a second face on the forehead.
-       Blank the whole face oval instead and draw every feature ourselves. FACE is in
-       crop space: the eyes measure to y .40-.47 and the mouth to y .60, so this covers
-       brow line to chin. */
-    const FACE = { cx: .500, cy: .487, rx: .232, ry: .268 };
-    this.face = FACE;
-    const inFace = (u, v) => {
-      const nx = (u - FACE.cx) / FACE.rx, ny = (v - FACE.cy) / FACE.ry;
-      return nx * nx + ny * ny <= 1;
-    };
+    /* His brows, nose, goatee and smile are what make the character recognisably him, so
+       the painted face is kept as drawn. Only the eye and mouth boxes are marked, and
+       they are only painted over when an expression actually needs to replace them -
+       see _eyes/_mouth. Blanking the whole face lost everything that identified him. */
+    const pad = .010;
+    const rb = b => [(b[0] - win[0]) / wFrac, (b[1] - win[1]) / hFrac,
+                     (b[2] - win[0]) / wFrac, (b[3] - win[1]) / hFrac];
+    const EL = rb(g.eyeL), ER = rb(g.eyeR), MO = rb(g.mouth);
+    this.box = { eyeL: EL, eyeR: ER, mouth: MO };
+    const inBox = (u, v, b) => u >= b[0] - pad && u <= b[2] + pad && v >= b[1] - pad && v <= b[3] + pad;
     const cells = [], skin = [];
     for (let y = 0; y < rows; y++) for (let x = 0; x < cols; x++) {
       const i = (y * cols + x) * 4;
@@ -108,13 +107,13 @@ export class Mii {
       const u = (x + .5) / cols, v = (y + .5) / rows, t = d[i] / 255;
       // the photographed brows are heavy and angled, which reads as cross; mask them out
       // and draw softer raised arcs instead
-      const f = inFace(u, v) ? 1 : 0;
+      const f = inBox(u, v, EL) || inBox(u, v, ER) ? 1 : inBox(u, v, MO) ? 2 : 0;
       cells.push({ x, y, v: t, f });
       // The face tone painted over the feature boxes: the panel under the eyes and above
       // the mouth. Measured at ~0.69 against 0.46 for the cheeks beside the eyes, which
       // reach into the hair, and against a nose sample that catches its shadow.
-      // skin tone sampled from the ring just outside the oval, which is still cheek
-      if (!f && inFace(u, (v - FACE.cy) * .82 + FACE.cy) && v > FACE.cy) skin.push(t);
+      // the tone used to cover a feature when we do replace it: cheek, beside the eyes
+      if (!f && v > EL[1] && v < EL[3] && (u < EL[0] - .02 || u > ER[2] + .02)) skin.push(t);
     }
     skin.sort((a, b) => a - b);
     this.grid = { cols, rows, cells, cell,
@@ -197,16 +196,21 @@ export class Mii {
     const s = cw * .92;
     this._geom = { ox, oy, cw, drawW, drawH };
 
-    // body, plus the face tone painted across the feature boxes
+    // Which features are being replaced this frame. At rest both are false and the face
+    // you see is the one from his own Mii - brows, nose, goatee and smile included.
+    const liveEye = st.eye !== "open" || this.blink > .08 ||
+                    Math.abs(this.look.x) > .12 || Math.abs(this.look.y) > .12;
+    const liveMouth = st.mouth !== "smile";
+    this._live = { eye: liveEye, mouth: liveMouth };
+
     for (const c of g.cells) {
-      const v = c.f ? g.skin : c.v;
+      const hide = (c.f === 1 && liveEye) || (c.f === 2 && liveMouth);
+      const v = hide ? g.skin : c.v;
       if (v < .10) continue;
       ctx.fillStyle = this._tone(v);
       ctx.fillRect(ox + c.x * cw, oy + c.y * cw, s, s);
     }
 
-    this._brows(st);
-    this._blush();
     this._eyes(st);
     this._mouth(st);
     if (this.state === "sleeping") this._zzz();
@@ -252,67 +256,72 @@ export class Mii {
     }
   }
 
-  _brows(st) {
-    const lift = st.eye === "wide" || st.eye === "happy" ? .020 : 0;
-    const v = .340 - lift;                      // higher, so the face opens up
-    // shorter and in the softer tone: a full-length bar in the darkest colour reads cross
-    this._arc(.345, .440, v, .026, C.pinkLo, 1);
-    this._arc(.560, .655, v, .026, C.pinkLo, 1);
-  }
-
-  _blush() {
-    const ctx = this.ctx;
-    ctx.globalAlpha = .40;
-    this._dot(.318, .545, .028, C.pink);
-    this._dot(.682, .545, .028, C.pink);
-    ctx.globalAlpha = 1;
-  }
-
+  /* Drawn only when an expression replaces the painted one. Coordinates come from the
+     measured boxes so a replacement lands exactly where his real feature was. */
   _eyes(st) {
+    if (!this._live.eye) return;
     const shut = st.eye === "closed" ? 1 : Math.max(this.blink, 0);
-    const EY = .446, EX = [.388, .612];
-    const dx = this.look.x * .012, dy = this.look.y * .010;
+    const dxu = this.look.x * .012, dyu = this.look.y * .010;
 
-    for (const ex of EX) {
-      if (shut > .5) { this._arc(ex - .052, ex + .052, EY + .012, .018, C.char, 1); continue; }
-      if (st.eye === "happy") { this._arc(ex - .052, ex + .052, EY + .016, .030, C.char, 1); continue; }
-      const r = st.eye === "wide" ? .048 : .041;
-      this._dot(ex + dx, EY + dy, r, C.char);
-      this._dot(ex + dx - r * .36, EY + dy - r * .38, r * .26, "#fff3f8");   // catchlight
+    for (const b of [this.box.eyeL, this.box.eyeR]) {
+      const cx = (b[0] + b[2]) / 2, cy = (b[1] + b[3]) / 2;
+      const hw = (b[2] - b[0]) / 2, hh = (b[3] - b[1]) / 2;
+      if (shut > .5) { this._arc(cx - hw, cx + hw, cy + hh * .5, hh * .5, C.char, 1); continue; }
+      if (st.eye === "happy") { this._arc(cx - hw, cx + hw, cy + hh * .7, hh * 1.1, C.char, 1); continue; }
+      // match the shape of his own eye: a wide oval, not a circle
+      const r = hh * (st.eye === "wide" ? 1.25 : 1.0);
+      this._oval(cx + dxu, cy + dyu, hw * .82, r, C.char);
+      this._dot(cx + dxu - hw * .30, cy + dyu - r * .40, r * .30, "#fff3f8");
     }
-    // a small nose so the gap between eyes and mouth is not empty
-    this._dot(.5, .527, .013, C.pinkLo);
+  }
+
+  _oval(u, v, ru, rv, col) {
+    const { cw, drawW, drawH, ox, oy } = this._geom;
+    const gx = u * drawW / cw, gy = v * drawH / cw;
+    const a = Math.max(.7, ru * drawW / cw), b = Math.max(.7, rv * drawH / cw);
+    this.ctx.fillStyle = col;
+    for (let i = Math.floor(gx - a); i <= Math.ceil(gx + a); i++)
+      for (let j = Math.floor(gy - b); j <= Math.ceil(gy + b); j++) {
+        const nx = (i + .5 - gx) / a, ny = (j + .5 - gy) / b;
+        if (nx * nx + ny * ny > 1) continue;
+        this._put(i, j, cw, ox, oy);
+      }
   }
 
   _mouth(st) {
+    if (!this._live.mouth) return;
     const ctx = this.ctx;
-    const CY = .606, HALF = .092;
-    if (st.mouth === "flat")  { this._arc(.455, .545, CY, 0, C.char, 1); return; }
-    if (st.mouth === "small") { this._arc(.470, .530, CY, .010, C.char, 1); return; }
-    if (st.mouth === "o")     { this._dot(.5, CY, .030, C.char);
-                                this._dot(.5, CY + .004, .018, "#5d1030"); return; }
+    const b = this.box.mouth;
+    const cx = (b[0] + b[2]) / 2, cy = (b[1] + b[3]) / 2;
+    const hw = (b[2] - b[0]) / 2, hh = (b[3] - b[1]) / 2;
 
-    // open smile: a curved band with a lighter inside and a row of teeth along the top,
-    // which is what stops a dark open mouth reading as a gape
-    const open = st.mouth === "talk" ? .018 + (Math.sin(this.t / 120) * .5 + .5) * .040
-               : st.mouth === "grin" ? .056 : .034;
+    if (st.mouth === "flat")  { this._arc(cx - hw * .55, cx + hw * .55, cy, 0, C.char, 1); return; }
+    if (st.mouth === "small") { this._arc(cx - hw * .34, cx + hw * .34, cy, hh * .3, C.char, 1); return; }
+    if (st.mouth === "o")     { this._oval(cx, cy, hw * .34, hh * .9, C.char);
+                                this._oval(cx, cy + hh * .12, hw * .20, hh * .55, "#5d1030"); return; }
+
+    /* talk / grin: his own smile is a wide open one with a top row of teeth, so the
+       replacement keeps that shape rather than inventing a new one. */
+    const open = st.mouth === "talk" ? .35 + (Math.sin(this.t / 120) * .5 + .5) * 1.25
+               : 1.5;
     const { cw, drawW, drawH, ox, oy } = this._geom;
-    const x0 = (.5 - HALF) * drawW / cw, x1 = (.5 + HALF) * drawW / cw;
-    const yTop = CY * drawH / cw, bow = .026 * drawH / cw, depth = open * drawH / cw;
+    const x0 = (cx - hw) * drawW / cw, x1 = (cx + hw) * drawW / cw;
+    const yMid = cy * drawH / cw;
+    const bow = hh * .55 * drawH / cw, depth = hh * open * drawH / cw;
     const n = Math.max(5, Math.round(x1 - x0));
     const cols = [];
     for (let i = 0; i <= n; i++) {
       const t = i / n, fall = Math.sin(t * Math.PI);
-      const top = Math.round(yTop - bow + fall * bow * 2);
-      const len = Math.max(1, Math.round(1 + fall * depth));
-      cols.push([Math.round(x0 + (x1 - x0) * t), top, len]);
+      cols.push([Math.round(x0 + (x1 - x0) * t),
+                 Math.round(yMid - bow * .5 + fall * bow),
+                 Math.max(1, Math.round(1 + fall * depth))]);
     }
-    ctx.fillStyle = C.char;                                   // the mouth opening
+    ctx.fillStyle = C.char;
     for (const [gx, top, len] of cols) for (let j = 0; j < len; j++) this._put(gx, top + j, cw, ox, oy);
-    ctx.fillStyle = "#5d1030";                                // inside, one shade up
+    ctx.fillStyle = "#5d1030";
     for (const [gx, top, len] of cols) if (len > 2)
       for (let j = 1; j < len - 1; j++) this._put(gx, top + j, cw, ox, oy);
-    ctx.fillStyle = "#fff0f6";                                // teeth along the upper lip
+    ctx.fillStyle = "#fff0f6";                      // upper teeth, as in his own smile
     for (const [gx, top, len] of cols) if (len > 1) this._put(gx, top, cw, ox, oy);
   }
 
