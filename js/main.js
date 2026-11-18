@@ -3,13 +3,13 @@
  * Deliberately additive: the original site still renders and works if this module fails
  * to load or the browser cannot run it. Everything here is enhancement.
  */
-import { tick, clamp, reduced, coarse } from "./tokens.js?v=20261118191940";
-import { PixelField } from "./pixel-field.js?v=20261118191940";
-import { Mii } from "./mii.js?v=20261118191940";
-import { Morph } from "./morph.js?v=20261118191940";
-import { Spotlight } from "./spotlight.js?v=20261118191940";
-import { Gallery } from "./gallery.js?v=20261118191940";
-import { AboutStory } from "./about.js?v=20261118191940";
+import { tick, clamp, reduced, coarse } from "./tokens.js?v=20261118193007";
+import { PixelField } from "./pixel-field.js?v=20261118193007";
+import { Mii } from "./mii.js?v=20261118193007";
+import { Morph } from "./morph.js?v=20261118193007";
+import { Spotlight } from "./spotlight.js?v=20261118193007";
+import { Gallery } from "./gallery.js?v=20261118193007";
+import { AboutStory } from "./about.js?v=20261118193007";
 
 const $ = id => document.getElementById(id);
 

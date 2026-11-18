@@ -5,7 +5,7 @@
  * both the density and the noise offset so the formations breathe as you move through
  * the page. Pointer-events are off: this never intercepts a click.
  */
-import { C, tick, lerp, clamp, reduced } from "./tokens.js?v=20261118191940";
+import { C, tick, lerp, clamp, reduced } from "./tokens.js?v=20261118193007";
 
 const hash = n => { const s = Math.sin(n * 127.1) * 43758.5453; return s - Math.floor(s); };
 function noise(x) {                      // 1-D value noise, smooth between integers

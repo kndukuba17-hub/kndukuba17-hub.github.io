@@ -63,9 +63,12 @@
   .hero{position:relative;height:100svh;min-height:640px;overflow:hidden;display:flex;align-items:center}
   /* The portrait gets its own column on desktop. Previously the canvas was inset:0 and the
      name and role marquee ran straight across Kaycee's face. */
-  /* An explicit width matters: with width:auto a canvas falls back to its width ATTRIBUTE,
-     which the renderer sets from clientWidth every resize - a loop that grows forever. */
-  #bin{position:absolute;top:0;right:0;bottom:0;left:auto;width:54%;height:100%;z-index:1;
+  /* Full-bleed again. Confining the canvas to the right column left a hard vertical seam
+     where its ambient pixel field stopped, which read as two separate screens. The
+     portrait is placed within the canvas instead - see sampleFace.
+     An explicit width still matters: with width:auto a canvas falls back to its width
+     ATTRIBUTE, which the renderer sets from clientWidth every resize - a loop that grows. */
+  #bin{position:absolute;inset:0;width:100%;height:100%;z-index:1;
     will-change:transform;animation:heroBreathe 11s ease-in-out infinite}
   @keyframes heroBreathe{
     0%,100%{transform:translate3d(0,0,0) scale(1)}
@@ -79,7 +82,7 @@
   .hero .hlede b{color:var(--ink);font-weight:600}
   .hero .hlede .pk{color:var(--pink)}
   @media (max-width:900px){
-    #bin{width:100%;opacity:.40}
+    #bin{opacity:.40}
     .hero .hcol{max-width:none}
     .hero .hlede{max-width:34ch}
   }
@@ -775,11 +778,12 @@ function sampleFace(){
     scale=Math.min(rwN/iw,rhN/ih); dw=iw*scale; dh=ih*scale;
     dx=(cols-dw)/2; dy=rows*0.075;  // clear the fixed nav so the mortarboard isn't clipped
   }else{
-    // The canvas is its own column now, so the portrait gets the whole of it. It used to
-    // start at 38% to leave room for the name, which left it filling ~a third of the
-    // viewport and reading small on wide screens.
-    scale=Math.min(cols/iw,rows/ih)*0.96; dw=iw*scale; dh=ih*scale;
-    dx=(cols-dw)/2; dy=(rows-dh)/2;
+    // Canvas is full-bleed, so the ambient field has no seam. The portrait is sized to
+    // the right-hand band and placed there, which keeps it clear of the name without
+    // cutting the background in half.
+    var bandL=cols*0.46, bandW=cols-bandL;
+    scale=Math.min(bandW/iw,rows/ih)*0.97; dw=iw*scale; dh=ih*scale;
+    dx=bandL+(bandW-dw)/2; dy=(rows-dh)/2;
   }
   ox.drawImage(face,dx,dy,dw,dh);
   var d;try{d=ox.getImageData(0,0,cols,rows).data;}catch(e){return;}
@@ -962,6 +966,6 @@ var rt=null;addEventListener("resize",function(){if(!ready)return;clearTimeout(r
   </button>
   <div class="guide-say" id="guideSay" role="status" aria-live="polite" hidden></div>
 </div>
-<script type="module" src="js/main.js?v=20261118191940"></script>
+<script type="module" src="js/main.js?v=20261118193007"></script>
 </body>
 </html>
