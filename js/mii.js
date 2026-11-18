@@ -6,7 +6,7 @@
  * drawn over the measured feature boxes, which is what makes expressions possible from a
  * single still image - no sprite sheet, no generated frames that could drift off-model.
  */
-import { C, tick, lerp, clamp, approach, reduced } from "./tokens.js?v=20261118125811";
+import { C, tick, lerp, clamp, approach, reduced } from "./tokens.js?v=20261118153621";
 
 const STATES = {
   idle:       { eye: "open",   mouth: "smile",  bob: 1.0, pri: 0 },
@@ -90,14 +90,17 @@ export class Mii {
     this.win = win;
     const d = o.getImageData(0, 0, cols, rows).data;
 
-    const pad = 0.012;
-    // re-express the measured boxes inside the crop window
-    const rb = b => [(b[0] - win[0]) / wFrac, (b[1] - win[1]) / hFrac,
-                     (b[2] - win[0]) / wFrac, (b[3] - win[1]) / hFrac];
-    const EL = rb(g.eyeL), ER = rb(g.eyeR), MO = rb(g.mouth);
-    const BL = g.browL ? rb(g.browL) : null, BR = g.browR ? rb(g.browR) : null;
-    this.box = { eyeL: EL, eyeR: ER, mouth: MO, browL: BL, browR: BR };
-    const inBox = (u, v, b) => u >= b[0] - pad && u <= b[2] + pad && v >= b[1] - pad && v <= b[3] + pad;
+    /* Masking features one box at a time left remnants of the originals - stray brow
+       ends, the nose shadow, hair fringe - which read as a second face on the forehead.
+       Blank the whole face oval instead and draw every feature ourselves. FACE is in
+       crop space: the eyes measure to y .40-.47 and the mouth to y .60, so this covers
+       brow line to chin. */
+    const FACE = { cx: .500, cy: .487, rx: .232, ry: .268 };
+    this.face = FACE;
+    const inFace = (u, v) => {
+      const nx = (u - FACE.cx) / FACE.rx, ny = (v - FACE.cy) / FACE.ry;
+      return nx * nx + ny * ny <= 1;
+    };
     const cells = [], skin = [];
     for (let y = 0; y < rows; y++) for (let x = 0; x < cols; x++) {
       const i = (y * cols + x) * 4;
@@ -105,13 +108,13 @@ export class Mii {
       const u = (x + .5) / cols, v = (y + .5) / rows, t = d[i] / 255;
       // the photographed brows are heavy and angled, which reads as cross; mask them out
       // and draw softer raised arcs instead
-      const f = inBox(u, v, EL) ? 1 : inBox(u, v, ER) ? 2 : inBox(u, v, MO) ? 3
-              : (BL && inBox(u, v, BL)) || (BR && inBox(u, v, BR)) ? 4 : 0;
+      const f = inFace(u, v) ? 1 : 0;
       cells.push({ x, y, v: t, f });
       // The face tone painted over the feature boxes: the panel under the eyes and above
       // the mouth. Measured at ~0.69 against 0.46 for the cheeks beside the eyes, which
       // reach into the hair, and against a nose sample that catches its shadow.
-      if (!f && u > EL[0] && u < ER[2] && v > EL[3] + .01 && v < MO[1] - .01) skin.push(t);
+      // skin tone sampled from the ring just outside the oval, which is still cheek
+      if (!f && inFace(u, (v - FACE.cy) * .82 + FACE.cy) && v > FACE.cy) skin.push(t);
     }
     skin.sort((a, b) => a - b);
     this.grid = { cols, rows, cells, cell,
@@ -219,125 +222,98 @@ export class Mii {
   }
   _put(gx, gy, cw, ox, oy) { this.ctx.fillRect(ox + gx * cw, oy + gy * cw, cw * .92, cw * .92); }
 
-  /* Gentle arcs, raised a little above where the originals sat. Raised brows read as
-     open and friendly; the angled ones the render gave him read as a scowl. */
-  _brows(st) {
-    if (!this.box.browL) return;
-    const ctx = this.ctx;
-    ctx.fillStyle = C.char;
-    const lift = (st.eye === "wide" || st.eye === "happy" ? 2 : 0) + 2;  // clear of the eyes
-    for (const bb of [this.box.browL, this.box.browR]) {
-      const e = this._cellsOf(bb);
-      // a stubby arch reads friendly; a full-width bar reads like a frown however you curve it
-      const n = Math.max(3, Math.round(e.w * .62));
-      const sx = e.x0 + Math.round((e.w - n) / 2);
-      for (let i = 0; i < n; i++) {
-        const u = n > 1 ? i / (n - 1) : .5;
-        const arch = Math.sin(u * Math.PI);
-        const y = e.y0 + Math.round(e.h * .5 - arch * e.h * .55) - lift;
-        this._put(sx + i, y, e.cw, e.ox, e.oy);
+  /* Everything below draws in crop space (0-1 across the drawn figure) and converts to
+     grid cells, so a feature's position is stated once and never drifts from the mask. */
+  _cell(u, v) {
+    const { ox, oy, cw, drawW, drawH } = this._geom;
+    return { gx: Math.round(u * drawW / cw), gy: Math.round(v * drawH / cw), cw, ox, oy };
+  }
+  _dot(u, v, r, col) {
+    const { cw, drawW, drawH, ox, oy } = this._geom;
+    const gx = u * drawW / cw, gy = v * drawH / cw, g = Math.max(.6, r * drawH / cw);
+    this.ctx.fillStyle = col;
+    for (let i = Math.floor(gx - g); i <= Math.ceil(gx + g); i++)
+      for (let j = Math.floor(gy - g); j <= Math.ceil(gy + g); j++) {
+        const nx = (i + .5 - gx) / g, ny = (j + .5 - gy) / g;
+        if (nx * nx + ny * ny > 1) continue;
+        this._put(i, j, cw, ox, oy);
       }
+  }
+  /* an arc: positive bow curves up (a smile, a raised brow), negative curves down */
+  _arc(u0, u1, v, bow, col, thick = 1) {
+    const { cw, drawW, drawH, ox, oy } = this._geom;
+    this.ctx.fillStyle = col;
+    const x0 = u0 * drawW / cw, x1 = u1 * drawW / cw, y = v * drawH / cw;
+    const n = Math.max(3, Math.round(x1 - x0));
+    const amp = bow * drawH / cw;
+    for (let i = 0; i <= n; i++) {
+      const t = i / n, yy = Math.round(y - Math.sin(t * Math.PI) * amp);
+      for (let k = 0; k < thick; k++) this._put(Math.round(x0 + (x1 - x0) * t), yy + k, cw, ox, oy);
     }
   }
 
-  /* a little warmth on the cheeks - cheap, and it does a lot for "friendly" */
+  _brows(st) {
+    const lift = st.eye === "wide" || st.eye === "happy" ? .020 : 0;
+    const v = .340 - lift;                      // higher, so the face opens up
+    // shorter and in the softer tone: a full-length bar in the darkest colour reads cross
+    this._arc(.345, .440, v, .026, C.pinkLo, 1);
+    this._arc(.560, .655, v, .026, C.pinkLo, 1);
+  }
+
   _blush() {
-    const { ox, oy, cw, drawW, drawH } = this._geom;
     const ctx = this.ctx;
-    ctx.globalAlpha = .34;
-    ctx.fillStyle = C.pink;
-    for (const cxN of [0.30, 0.70]) {
-      const gx = Math.round(cxN * drawW / cw), gy = Math.round(0.345 * drawH / cw);
-      for (let i = -1; i <= 1; i++) for (let j = 0; j <= 1; j++)
-        this._put(gx + i, gy + j, cw, ox, oy);
-    }
+    ctx.globalAlpha = .40;
+    this._dot(.318, .545, .028, C.pink);
+    this._dot(.682, .545, .028, C.pink);
     ctx.globalAlpha = 1;
   }
 
   _eyes(st) {
-    const ctx = this.ctx;
     const shut = st.eye === "closed" ? 1 : Math.max(this.blink, 0);
-    for (const b of [this.box.eyeL, this.box.eyeR]) {
-      const e = this._cellsOf(b);
-      ctx.fillStyle = C.char;
-      const dx = Math.round(this.look.x * 1.4);
-      const dy = Math.round(this.look.y * 1.2);
-      const cx = e.x0 + e.w / 2, cy = e.y0 + e.h / 2;
+    const EY = .446, EX = [.388, .612];
+    const dx = this.look.x * .012, dy = this.look.y * .010;
 
-      if (shut > .5) {                                   // closed: a shallow happy curve
-        for (let i = 0; i < e.w; i++) {
-          const u = e.w > 1 ? i / (e.w - 1) : .5;
-          this._put(e.x0 + i, Math.round(cy + Math.sin(u * Math.PI) * .9), e.cw, e.ox, e.oy);
-        }
-        continue;
-      }
-      if (st.eye === "happy") {                          // ^ ^
-        for (let i = 0; i < e.w; i++) {
-          const u = e.w > 1 ? i / (e.w - 1) : .5;
-          this._put(e.x0 + i, Math.round(cy + .8 - Math.sin(u * Math.PI) * 1.9), e.cw, e.ox, e.oy);
-        }
-        continue;
-      }
-
-      /* A round pupil, not the wide lens the source eye box describes. Driving the radius
-         from the box HEIGHT is the whole trick - using its width made two dark rectangles
-         that read as sunglasses. */
-      const r = Math.max(1.6, e.h * (st.eye === "wide" ? .95 : .78));
-      const rx = r * 1.05, ry = r;
-      const px = cx + dx, py = cy + dy;
-      const i0 = Math.floor(px - rx), i1 = Math.ceil(px + rx);
-      const j0 = Math.floor(py - ry), j1 = Math.ceil(py + ry);
-      for (let i = i0; i <= i1; i++) for (let j = j0; j <= j1; j++) {
-        const nx = (i + .5 - px) / rx, ny = (j + .5 - py) / ry;
-        if (nx * nx + ny * ny > 1) continue;
-        this._put(i, j, e.cw, e.ox, e.oy);
-      }
-      // catchlight, upper left - the cheapest thing that makes an eye look alive
-      ctx.fillStyle = "#ffe9f2";
-      this._put(Math.round(px - rx * .34), Math.round(py - ry * .36), e.cw, e.ox, e.oy);
-      ctx.fillStyle = C.char;
+    for (const ex of EX) {
+      if (shut > .5) { this._arc(ex - .052, ex + .052, EY + .012, .018, C.char, 1); continue; }
+      if (st.eye === "happy") { this._arc(ex - .052, ex + .052, EY + .016, .030, C.char, 1); continue; }
+      const r = st.eye === "wide" ? .048 : .041;
+      this._dot(ex + dx, EY + dy, r, C.char);
+      this._dot(ex + dx - r * .36, EY + dy - r * .38, r * .26, "#fff3f8");   // catchlight
     }
+    // a small nose so the gap between eyes and mouth is not empty
+    this._dot(.5, .527, .013, C.pinkLo);
   }
 
   _mouth(st) {
     const ctx = this.ctx;
-    // this.box, not this.geo: box holds the boxes re-expressed inside the crop window.
-    // Using geo put the mouth up by the nose and no smile ever appeared.
-    // Widened too - his real mouth is small and at this grid it read as a smudge.
-    const b = this.box.mouth, midX = (b[0] + b[2]) / 2, halfW = (b[2] - b[0]) * .72;
-    const m = this._cellsOf([midX - halfW, b[1], midX + halfW, b[3]]);
-    ctx.fillStyle = C.char;
-    const midY = m.y0 + Math.round(m.h / 2);
+    const CY = .606, HALF = .092;
+    if (st.mouth === "flat")  { this._arc(.455, .545, CY, 0, C.char, 1); return; }
+    if (st.mouth === "small") { this._arc(.470, .530, CY, .010, C.char, 1); return; }
+    if (st.mouth === "o")     { this._dot(.5, CY, .030, C.char);
+                                this._dot(.5, CY + .004, .018, "#5d1030"); return; }
 
-    if (st.mouth === "flat" || st.mouth === "small") {
-      const n = Math.max(2, Math.round(m.w * (st.mouth === "flat" ? .5 : .32)));
-      const sx = m.x0 + ((m.w - n) >> 1);
-      for (let i = 0; i < n; i++) this._put(sx + i, midY, m.cw, m.ox, m.oy);
-      return;
+    // open smile: a curved band with a lighter inside and a row of teeth along the top,
+    // which is what stops a dark open mouth reading as a gape
+    const open = st.mouth === "talk" ? .018 + (Math.sin(this.t / 120) * .5 + .5) * .040
+               : st.mouth === "grin" ? .056 : .034;
+    const { cw, drawW, drawH, ox, oy } = this._geom;
+    const x0 = (.5 - HALF) * drawW / cw, x1 = (.5 + HALF) * drawW / cw;
+    const yTop = CY * drawH / cw, bow = .026 * drawH / cw, depth = open * drawH / cw;
+    const n = Math.max(5, Math.round(x1 - x0));
+    const cols = [];
+    for (let i = 0; i <= n; i++) {
+      const t = i / n, fall = Math.sin(t * Math.PI);
+      const top = Math.round(yTop - bow + fall * bow * 2);
+      const len = Math.max(1, Math.round(1 + fall * depth));
+      cols.push([Math.round(x0 + (x1 - x0) * t), top, len]);
     }
-    if (st.mouth === "o") {
-      const r = Math.max(1, Math.round(m.h * .75));
-      for (let i = -r; i <= r; i++) for (let j = -r; j <= r; j++) {
-        if (i * i + j * j > r * r + r) continue;
-        this._put(m.x0 + (m.w >> 1) + i, midY + j, m.cw, m.ox, m.oy);
-      }
-      return;
-    }
-    // smile / grin / talk: a curve of columns, opening by state
-    const open = st.mouth === "talk" ? (Math.sin(this.t / 115) * .5 + .5) * m.h * 1.6
-               : st.mouth === "grin" ? m.h * 1.5 : m.h * .95;   // a fuller resting smile
-    const teeth = [];
-    for (let i = 0; i < m.w; i++) {
-      const u = m.w > 1 ? i / (m.w - 1) : .5, dip = Math.sin(u * Math.PI);
-      const top = midY + Math.round(dip * m.h * .55) - 1;   // deeper curve = clearer smile
-      const len = Math.max(1, Math.round(1 + dip * open));
-      for (let j = 0; j < len; j++) this._put(m.x0 + i, top + j, m.cw, m.ox, m.oy);
-      if (dip > .45 && len > 2) teeth.push([m.x0 + i, top]);
-    }
-    if (st.mouth === "grin" && teeth.length) {
-      ctx.fillStyle = "#f3e2ea";
-      for (const [gx, gy] of teeth) this._put(gx, gy, m.cw, m.ox, m.oy);
-    }
+    ctx.fillStyle = C.char;                                   // the mouth opening
+    for (const [gx, top, len] of cols) for (let j = 0; j < len; j++) this._put(gx, top + j, cw, ox, oy);
+    ctx.fillStyle = "#5d1030";                                // inside, one shade up
+    for (const [gx, top, len] of cols) if (len > 2)
+      for (let j = 1; j < len - 1; j++) this._put(gx, top + j, cw, ox, oy);
+    ctx.fillStyle = "#fff0f6";                                // teeth along the upper lip
+    for (const [gx, top, len] of cols) if (len > 1) this._put(gx, top, cw, ox, oy);
   }
 
   _zzz() {

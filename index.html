@@ -940,6 +940,8 @@ function frame(){
     else      { mx=W*(0.70+0.15*Math.sin(t*0.5)); my=H*(0.46+0.20*Math.cos(t*0.42)); }
   }
   x.clearRect(0,0,W,H);
+  // the base canvas is empty until the first size()/buildBase(); drawing a 0x0 canvas throws
+  if(!base.width||!base.height){rafH=requestAnimationFrame(frame);return;}
   x.drawImage(base,0,0,W,H);
   x.font=FONT;x.textAlign="center";x.textBaseline="middle";
   // 1. living shimmer: swap a scattered handful of characters every frame
@@ -1144,6 +1146,6 @@ var rt=null;addEventListener("resize",function(){if(!ready)return;clearTimeout(r
   </button>
   <div class="guide-say" id="guideSay" role="status" aria-live="polite" hidden></div>
 </div>
-<script type="module" src="js/main.js?v=20261118125811"></script>
+<script type="module" src="js/main.js?v=20261118153621"></script>
 </body>
 </html>
