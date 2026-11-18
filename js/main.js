@@ -3,13 +3,13 @@
  * Deliberately additive: the original site still renders and works if this module fails
  * to load or the browser cannot run it. Everything here is enhancement.
  */
-import { tick, clamp, reduced, coarse } from "./tokens.js?v=20261118155052";
-import { PixelField } from "./pixel-field.js?v=20261118155052";
-import { Mii } from "./mii.js?v=20261118155052";
-import { Morph } from "./morph.js?v=20261118155052";
-import { Spotlight } from "./spotlight.js?v=20261118155052";
-import { Gallery } from "./gallery.js?v=20261118155052";
-import { AboutStory } from "./about.js?v=20261118155052";
+import { tick, clamp, reduced, coarse } from "./tokens.js?v=20261118180005";
+import { PixelField } from "./pixel-field.js?v=20261118180005";
+import { Mii } from "./mii.js?v=20261118180005";
+import { Morph } from "./morph.js?v=20261118180005";
+import { Spotlight } from "./spotlight.js?v=20261118180005";
+import { Gallery } from "./gallery.js?v=20261118180005";
+import { AboutStory } from "./about.js?v=20261118180005";
 
 const $ = id => document.getElementById(id);
 
@@ -81,12 +81,12 @@ btn?.addEventListener("click", () => {
 
 /* ------------------------------------------------- section-aware behaviour ---- */
 const SECTION_LINES = {
-  work:    ["Six projects, all on real data.<br>Have a look.", "excited"],
-  about:   ["This bit's about me, if you're curious.", "attentive"],
+  work:    ["Here's a closer look at some selected work.<br>Click a card to go deeper.", "pointing"],
+  skills:  ["And this is what I build with.", "attentive"],
   contact: ["You made it to the end. Say hello?", "celebrating"],
 };
 let current = "";
-const sections = ["work", "about", "contact"].map(id => $(id)).filter(Boolean);
+const sections = ["work", "skills", "contact"].map(id => $(id)).filter(Boolean);
 
 if (sections.length) {
   const io = new IntersectionObserver(entries => {
@@ -177,7 +177,7 @@ if (spot) tick(() => updateWall());
    subject. Whichever section holds the middle of the viewport wins - an
    IntersectionObserver picked whichever entry happened to be in the callback batch, so
    the hero leaving could set the strength even once Featured Work filled the screen. */
-const WALL = { top: 0, work: 1, about: .42, contact: .6 };
+const WALL = { top: 0, about: .42, work: 1, skills: .5, contact: .6 };
 /* Driven from the shared ticker rather than the scroll event. Four getBoundingClientRect
    calls a frame is nothing, and it removes every question about when scroll fires, when
    a programmatic jump settles, and whether an rAF guard is still latched. */
@@ -233,6 +233,38 @@ if (abStage && $("abMii")) {
     onBeat: i => guide?.classList.toggle("is-hidden", i >= 0),
   });
   tick(() => story.update());
+}
+
+/* --------------------------------------------------------------- capabilities ---- */
+const tkGrid = $("tkgrid");
+if (tkGrid) {
+  const TOOLS = ["Python","pandas","NumPy","scikit-learn","XGBoost","SHAP","PyTorch","TensorFlow",
+    "SQL","PostgreSQL","BigQuery","Snowflake","dbt","LangChain","FAISS","Transformers",
+    "Docker","AWS","GCP","MLflow","GitHub Actions","Git","Matplotlib","Seaborn","Streamlit","R"];
+  tkGrid.innerHTML = TOOLS.map(t => `<span>${t}</span>`).join("");
+  const chips = [...tkGrid.children];
+  const io = new IntersectionObserver(es => {
+    for (const e of es) {
+      if (!e.isIntersecting) continue;
+      io.unobserve(e.target);
+      // light them in sequence rather than all at once - it reads as the set loading
+      chips.forEach((c, i) => setTimeout(() => c.classList.add("lit"), reduced() ? 0 : i * 45));
+    }
+  }, { threshold: .2 });
+  io.observe(tkGrid);
+}
+
+const capBars = [...document.querySelectorAll(".capbar")];
+if (capBars.length) {
+  const io2 = new IntersectionObserver(es => {
+    for (const e of es) {
+      if (!e.isIntersecting) continue;
+      io2.unobserve(e.target);
+      const i = e.target.querySelector("i");
+      if (i) i.style.width = e.target.dataset.fill + "%";
+    }
+  }, { threshold: .5 });
+  capBars.forEach(b => io2.observe(b));
 }
 
 /* expose for testing */
