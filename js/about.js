@@ -10,20 +10,28 @@
 import { clamp, reduced } from "./tokens.js";
 
 export const BEATS = [
-  { t: `Hey — I'm Kaycee.<span class="small">02 / About</span>`,                       s: "attentive" },
-  { t: `Psychology taught me <b>why</b> people decide.`,                                s: "talking" },
-  { t: `Data science lets me <b>predict</b> what they'll do next — and turn it into a decision.`, s: "talking" },
-  { t: `I build end-to-end on <b>real, messy public data</b>. Not synthetic demos.`,     s: "pointing" },
-  { t: `Honest metrics. I report the limitation, not just the headline number.`,         s: "attentive" },
-  { t: `And interpretability — <b>the why</b>, not a black box.`,                        s: "talking" },
-  { t: `Every model ends in an action someone can actually take.`,                       s: "excited" },
-  { t: `Right now I'm an <b>AI &amp; Data Scientist at Yves OS</b>, applying machine learning and LLMs to product analytics.`, s: "talking" },
-  { t: `That's me. Keep scrolling for the detail — or just say hello.`,                  s: "celebrating" },
+  { t: `Hi, I&rsquo;m Kaycee!<span class="small">02 / About</span>`, s: "excited" },
+  { t: `A curious mind, a creative thinker and someone who&rsquo;s <b>always building something</b>.`, s: "attentive" },
+  { t: `Psychology taught me to understand the <b>why</b> behind human behaviour and decision-making.`, s: "talking" },
+  { t: `Data Science took that further &mdash; teaching me how to uncover patterns, extract meaning from
+         complex datasets and use those insights to <b>understand what happens next</b>.`, s: "talking" },
+  { t: `I&rsquo;m driven by <b>possibility</b>.`, s: "excited" },
+  { t: `I design and build intelligent systems, bringing together AI, data science and software
+         engineering to turn complex ideas into <b>practical, end-to-end solutions</b>.`, s: "talking" },
+  { t: `From machine learning models and intelligent workflows to AI-powered products, I enjoy working
+         across the entire process &mdash; from the initial idea and architecture to development,
+         integration and deployment.`, s: "pointing" },
+  { t: `Right now I&rsquo;m building <b>Yves</b> &mdash; an AI-powered desktop assistant that brings
+         information, tools and workflows into one intelligent workspace.`,
+    s: "excited", media: "yves" },
+  { t: `For me it&rsquo;s about more than building technology. It&rsquo;s about rethinking what&rsquo;s
+         possible with it, solving meaningful problems and creating things that <b>change the way people
+         work</b> and interact with the world.`, s: "celebrating" },
 ];
 
 export class AboutStory {
-  constructor({ stage, bubble, dots, mii, onBeat }) {
-    this.stage = stage; this.bubble = bubble; this.mii = mii;
+  constructor({ stage, bubble, dots, mii, media, onBeat }) {
+    this.stage = stage; this.bubble = bubble; this.mii = mii; this.media = media;
     this.onBeat = onBeat || (() => {});
     this.i = -1;
     this.p = this.bubble.querySelector("p");
@@ -62,8 +70,16 @@ export class AboutStory {
     const b = BEATS[i];
     const swap = () => {
       this.p.innerHTML = b.t;
+      this.bubble.classList.toggle("has-media", !!b.media);
       this.bubble.classList.add("in");
       this.mii?.set(b.s, b.s === "talking" ? 2200 : 1800);
+      if (this.media) {
+        const on = !!b.media;
+        this.media.hidden = !on;
+        const v = this.media.querySelector("video");
+        // only ever playing on its own beat - a looping video off-screen is wasted work
+        if (v) { if (on) v.play().catch(() => {}); else { v.pause(); v.currentTime = 0; } }
+      }
     };
     if (first || reduced()) swap();
     else {

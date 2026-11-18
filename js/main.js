@@ -3,13 +3,13 @@
  * Deliberately additive: the original site still renders and works if this module fails
  * to load or the browser cannot run it. Everything here is enhancement.
  */
-import { tick, clamp, reduced, coarse } from "./tokens.js?v=20261118120018";
-import { PixelField } from "./pixel-field.js?v=20261118120018";
-import { Mii } from "./mii.js?v=20261118120018";
-import { Morph } from "./morph.js?v=20261118120018";
-import { Spotlight } from "./spotlight.js?v=20261118120018";
-import { Gallery } from "./gallery.js?v=20261118120018";
-import { AboutStory } from "./about.js?v=20261118120018";
+import { tick, clamp, reduced, coarse } from "./tokens.js?v=20261118125811";
+import { PixelField } from "./pixel-field.js?v=20261118125811";
+import { Mii } from "./mii.js?v=20261118125811";
+import { Morph } from "./morph.js?v=20261118125811";
+import { Spotlight } from "./spotlight.js?v=20261118125811";
+import { Gallery } from "./gallery.js?v=20261118125811";
+import { AboutStory } from "./about.js?v=20261118125811";
 
 const $ = id => document.getElementById(id);
 
@@ -228,7 +228,7 @@ if (abStage && $("abMii")) {
   setTimeout(sizeAb, 400);
 
   story = new AboutStory({
-    stage: abStage, bubble: $("abBubble"), dots: $("abDots"), mii: abMii,
+    stage: abStage, bubble: $("abBubble"), dots: $("abDots"), mii: abMii, media: $("abMedia"),
     // one character at a time: the floating guide stands down while the big one talks
     onBeat: i => guide?.classList.toggle("is-hidden", i >= 0),
   });

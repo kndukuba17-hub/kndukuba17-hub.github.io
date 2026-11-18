@@ -331,17 +331,17 @@
 /* only one character on screen at a time */
 .guide.is-hidden{opacity:0;pointer-events:none;transform:translateY(12px) scale(.9);
   transition:opacity .45s,transform .45s}
-.guide{position:fixed;right:clamp(14px,2.4vw,34px);bottom:clamp(14px,2.4vw,34px);z-index:60;
-  display:flex;align-items:flex-end;gap:10px;flex-direction:row-reverse}
+.guide{position:fixed;left:clamp(14px,2.4vw,34px);bottom:clamp(14px,2.4vw,34px);z-index:60;
+  display:flex;align-items:flex-end;gap:10px}
 .guide-btn{appearance:none;border:1px solid rgba(255,46,136,.3);background:rgba(10,10,14,.72);
   backdrop-filter:blur(8px);border-radius:50%;padding:0;cursor:pointer;display:grid;place-items:center;
-  width:92px;height:92px;transition:transform .5s cubic-bezier(.16,1,.3,1),border-color .3s,width .5s,height .5s;
+  width:138px;height:138px;transition:transform .5s cubic-bezier(.16,1,.3,1),border-color .3s,width .5s,height .5s;
   overflow:hidden}
 .guide-btn:hover{transform:translateY(-3px) scale(1.04);border-color:var(--pink)}
 .guide-btn:focus-visible{outline:2px solid var(--pink);outline-offset:3px}
 .guide-btn canvas{display:block;opacity:0;transition:opacity .6s}
 .guide-btn canvas.is-ready{opacity:1}
-.guide.is-big .guide-btn{width:160px;height:160px}
+.guide.is-big .guide-btn{width:208px;height:208px}
 .guide-say{max-width:min(46ch,62vw);background:rgba(16,16,22,.94);border:1px solid rgba(255,46,136,.26);
   border-radius:14px;padding:12px 15px;font-size:.92rem;line-height:1.45;color:var(--ink);
   box-shadow:0 14px 40px rgba(0,0,0,.5);opacity:0;transform:translateY(6px);
@@ -349,8 +349,8 @@
 .guide-say.in{opacity:1;transform:none}
 .guide-say b{color:var(--pink)}
 @media (max-width:620px){
-  .guide-btn{width:68px;height:68px}
-  .guide.is-big .guide-btn{width:104px;height:104px}
+  .guide-btn{width:96px;height:96px}
+  .guide.is-big .guide-btn{width:132px;height:132px}
   .guide-say{max-width:58vw;font-size:.84rem;padding:10px 12px}
 }
 @media (prefers-reduced-motion:reduce){
@@ -464,6 +464,27 @@
 @media (prefers-reduced-motion:reduce){
   .abbubble{transition:none}#abMii{transition:none}
 }
+
+/* the Yves beat carries a video; clicking it opens the product */
+/* a component that sets its own display must opt back into the hidden attribute */
+.abmedia[hidden]{display:none}
+.abmedia{position:relative;display:block;width:min(680px,88vw);border-radius:14px;overflow:hidden;
+  border:1px solid rgba(255,46,136,.3);box-shadow:0 24px 60px rgba(0,0,0,.6);
+  text-decoration:none;line-height:0;transition:transform .45s cubic-bezier(.16,1,.3,1),border-color .3s}
+.abmedia:hover{transform:translateY(-4px) scale(1.012);border-color:var(--pink)}
+.abmedia:focus-visible{outline:2px solid var(--pink);outline-offset:4px}
+.abmedia video{display:block;width:100%;height:auto;aspect-ratio:16/9;object-fit:cover;background:#07070a}
+.abmedia-cta{position:absolute;right:10px;bottom:10px;background:rgba(7,7,10,.86);color:var(--ink);
+  border:1px solid rgba(255,46,136,.4);border-radius:8px;padding:6px 11px;
+  font-family:"SF Mono",Menlo,monospace;font-size:.68rem;letter-spacing:.07em;line-height:1}
+/* on the media beat the bubble gives the video room and the character steps back */
+.abbubble.has-media p{font-size:clamp(.95rem,1.7vw,1.15rem)}
+.abpin:has(.abmedia:not([hidden])) #abMii{width:118px!important;height:118px!important}
+@media (max-width:700px){
+  .abmedia{width:94vw}
+  .abmedia-cta{font-size:.6rem;padding:5px 8px}
+  .abpin:has(.abmedia:not([hidden])) #abMii{width:84px!important;height:84px!important}
+}
 </style>
 
 <div class="cur" id="cur"></div>
@@ -524,6 +545,12 @@
   <div class="abstage" id="abstage">
     <div class="abpin">
       <div class="abbubble" id="abBubble" role="status" aria-live="polite"><p></p></div>
+      <a class="abmedia" id="abMedia" href="https://yvesos.com" target="_blank" rel="noopener"
+         aria-label="Yves OS — open yvesos.com" hidden>
+        <video src="assets/projects/yves/yves-ani.mp4" muted loop playsinline preload="none"
+               aria-hidden="true"></video>
+        <span class="abmedia-cta">yvesos.com <span aria-hidden="true">&#8599;</span></span>
+      </a>
       <canvas id="abMii" aria-hidden="true"></canvas>
       <div class="abdots" id="abDots" aria-hidden="true"></div>
     </div>
@@ -1117,6 +1144,6 @@ var rt=null;addEventListener("resize",function(){if(!ready)return;clearTimeout(r
   </button>
   <div class="guide-say" id="guideSay" role="status" aria-live="polite" hidden></div>
 </div>
-<script type="module" src="js/main.js?v=20261118120018"></script>
+<script type="module" src="js/main.js?v=20261118125811"></script>
 </body>
 </html>
