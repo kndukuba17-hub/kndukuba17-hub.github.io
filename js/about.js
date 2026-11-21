@@ -7,7 +7,7 @@
  * Every word here is Kaycee's own, lifted from the About copy below - this retells it,
  * it does not invent a second version of him.
  */
-import { clamp, reduced } from "./tokens.js?v=20261118193802";
+import { clamp, reduced, coarse } from "./tokens.js?v=20261121123731";
 
 export const BEATS = [
   { t: `Hi, I&rsquo;m Kaycee!`, s: "excited" },
@@ -42,6 +42,47 @@ export class AboutStory {
     // the stage needs room for every beat to get its own scroll band
     // 62svh a beat left long empty stretches between lines
     stage.style.height = `${BEATS.length * 46 + 30}svh`;
+
+    if (coarse()) {
+      stage.classList.add("tappable");
+      // On a phone the stage scrolls past faster than a line can be read, so tapping
+      // steps through it: right side forward, left third back.
+      this.pin = bubble.closest(".abpin") || stage;
+      // A real scroll resyncs the sequence. Resyncing inside set() instead looked right
+      // but fired for every beat the smooth scroll passed through, wiping the target
+      // mid-flight so taps kept landing short.
+      // A real swipe hands control back to the scroll position.
+      const release = () => { this.tapMode = false; };
+      addEventListener("wheel", release, { passive: true });
+      addEventListener("touchmove", release, { passive: true });
+
+      this.pin.addEventListener("click", e => {
+        if (e.target.closest("a,button")) return;      // never swallow the Yves link
+        const r = this.pin.getBoundingClientRect();
+        const dir = e.clientX - r.left < r.width * .32 ? -1 : 1;
+        // Tap is authoritative. Deriving the next beat from the scroll position meant
+        // reading a value the browser had not settled on yet, and the sequence skipped
+        // and doubled back. Set the beat, then move the page under it.
+        const next = clamp(this.i + dir, 0, BEATS.length - 1);
+        this.tapMode = true;
+        this.set(next);
+        this.goTo(next);
+      });
+    }
+  }
+
+  /* Scroll to a given beat. On a phone the stage goes past faster than a line can be
+     read, so tapping steps through it instead of relying on thumb-scroll precision. */
+  goTo(i) {
+    const n = BEATS.length;
+    const k = clamp(i, 0, n - 1);
+    const r = this.stage.getBoundingClientRect();
+    const travel = Math.max(1, r.height - innerHeight);
+    const p = .04 + .9 * ((k + .5) / n);
+    // An instant jump, not a smooth one: with smooth scrolling a second tap arrives
+    // mid-animation and the beat the stage reports is still the old one, so the
+    // sequence drifted and overshot. Stepping instantly keeps scroll and beat in sync.
+    scrollTo({ top: r.top + scrollY + travel * p, behavior: "instant" });
   }
 
   /* progress through the stage, 0 before it, 1 after */
@@ -57,6 +98,7 @@ export class AboutStory {
     if (!onScreen) { this.set(-1); return false; }
     // a small dead band at each end so the first and last beats hold while the sticky
     // frame is still settling into and out of place
+    if (this.tapMode) return true;         // tap owns the beat until a real swipe
     const p = clamp((this.progress() - .04) / .9, 0, 1);
     this.set(Math.min(BEATS.length - 1, Math.floor(p * BEATS.length)));
     return true;
